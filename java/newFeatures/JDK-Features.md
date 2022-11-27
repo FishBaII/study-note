@@ -156,7 +156,7 @@ G1的相关参数与说明如下：
 
 降低JAVA学习门槛，快速测试JDK简单api  
 
-![](pic/jsheel.png)
+![](./pic/jsheel.png)
 
 -------
 
