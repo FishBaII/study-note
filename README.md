@@ -1,12 +1,31 @@
 # study-note
 
 
+
 ### 数据库
 * [Redis](https://github.com/FishBaII/study-note/blob/main/redis/Redis.md)
+* [Redis分布式部署](https://github.com/FishBaII/study-note/blob/main/redis/Redis-Cluster.md)
+* [DynamicSource动态数据源](https://github.com/FishBaII/study-note/blob/main/dataBase/dynamicSource.md)
+* [JPA持久层框架](https://github.com/FishBaII/study-note/blob/main/dataBase/JPA-SpringBoot.md)
+* MyBatisPlus持久层框架 //todo
 
 ### java
 * [JDK9-11新特性](https://github.com/FishBaII/study-note/blob/main/java/newFeatures/JDK-Features.md)
 
 
+
+### 中间件服务
+* [Seata分布式事务](https://github.com/FishBaII/study-note/blob/main/server/seata.md)
+* [RabbitMQ消息队列](https://github.com/FishBaII/study-note/blob/main/server/rabbitMQ.md)
+* [Canal数据库增量消费](https://github.com/FishBaII/study-note/blob/main/server/canal.md)
+
+
+### 安全
+* [SpringSecurity认证授权](https://github.com/FishBaII/study-note/blob/main/spring/LoginBySpringSecurity.md)
+* [JWT](https://github.com/FishBaII/study-note/blob/main/spring/JWT.md)
+
+
+### 公共API
+* [微信API](https://github.com/FishBaII/study-note/blob/main/API/tencent/wechat-api.md)
 
 ![640.png](https://cdn.nlark.com/yuque/0/2020/png/1728234/1604024836358-b1064368-79b1-4074-b4ca-ab058f7bfdd2.png#align=left&display=inline&height=2742&margin=%5Bobject%20Object%5D&name=640.png&originHeight=2742&originWidth=1080&size=846299&status=done&style=none&width=1080)
