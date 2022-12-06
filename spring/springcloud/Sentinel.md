@@ -103,8 +103,21 @@ public class SentinelController {
 <a name="PMDq8"></a>
 ## 流量控制
 
+### Dashboard
 ![](./pic/flow-rule.png)
-资源名：API，例如 /success<br />针对来源：<br />阈值类型： QPS（每秒请求数），线程数（同时访问API的线程数量，并发数）<br />单机阈值：设置上一个的具体数量<br />流控模式：直接，关联（当关联的资源达到阈值，限流自身），链路（只记录指定链路的流量，指定资源从入口进来的流量，如果达到阈值进行限流）<br />温控效果：快速失败， Warm Up（根据codeFactor值（默认为3），从阈值/codeFactor，经过预热时长，才达到设置的QPS阈值），排队等待
+资源名：API，例如 /success  
+针对来源：流控针对的调用来源  
+阈值类型： QPS（每秒请求数），线程数（同时访问API的线程数量，并发数）  
+单机阈值：设置上一个的具体数量  
+流控模式：直接，关联（当关联的资源达到阈值，限流自身），链路（只记录指定链路的流量，
+指定资源从入口进来的流量，如果达到阈值进行限流）  
+温控效果：快速失败， Warm Up（根据codeFactor值（默认为3），
+从阈值/codeFactor，经过预热时长，才达到设置的QPS阈值），排队等待（请求等待返回，阈值类型必须为QPS）
+
+
+
+
+### JAVA API
 
 | **Field** | **说明** | **默认值** |
 | --- | --- | --- |
@@ -114,4 +127,94 @@ public class SentinelController {
 | limitApp | 流控针对的调用来源 | default，代表不区分调用来源 |
 | strategy | 调用关系限流策略：直接、链路、关联 | 根据资源本身（直接） |
 | controlBehavior | 流控效果（直接拒绝 / 排队等待 / 慢启动模式），不支持按调用关系限流 | 直接拒绝 |
+| refResource | （策略为关联时启用）关联资源 |  |
+| maxQueueingTimeMs | （流控效果为排队等待时启用）最大等待时间 |  |
+
+测试接口
+```
+	//接口，如果被限流则返回指定处理器
+    @GetMapping("/qps")
+    @SentinelResource(value = "qps", blockHandler = "myBlockHandle")
+    public String qpsTest(){
+		
+        return "QPS!";
+		
+    }
+	
+    @GetMapping("/relate")
+    @SentinelResource(value = "relate", blockHandler = "myBlockHandle")
+    public String relateTest() throws InterruptedException {
+
+		Thread.sleep(10 * 1000);
+        return "relate!";
+
+    }
+	
+	
+	//自定义处理器
+    public String myBlockHandle(BlockException blockException){
+		
+        return "myBlockHandle";
+
+    }
+
+```
+
+1. 创建限流规则：QPS，直接，直接失败
+
+
+```
+
+    private static void setFlowRuleManager(){
+
+        List<FlowRule> rules = new ArrayList<>();
+        FlowRule qpsRule = new FlowRule();
+		//资源
+        qpsRule.setResource("qps");
+		//阈值类型
+        qpsRule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        //单机阈值
+        qpsRule.setCount(2);
+		//流控效果
+        qpsRule.setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_DEFAULT);
+		//调用关系限流策略
+		qpsRule.setStrategy(RuleConstant.STRATEGY_DIRECT);
+        rules.add(qpsRule);
+		//将规则载入sentinel服务中生效
+        FlowRuleManager.loadRules(rules);
+    }
+```
+
+>- 如果一秒内请求/qps超过2次则返回 “myBlockHandle”
+
+
+1. 创建限流规则：QPS，关联，排队等待
+
+
+```
+	//比如对数据库同一个字段的读操作和写操作存在争抢
+    private static void setFlowRuleManager(){
+
+        List<FlowRule> rules = new ArrayList<>();
+        FlowRule qpsRule = new FlowRule();
+		//资源
+        qpsRule.setResource("qps");
+		//阈值类型
+        qpsRule.setGrade(RuleConstant.FLOW_GRADE_THREAD);
+        //单机阈值
+        qpsRule.setCount(1);
+		//流控效果
+        qpsRule.setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_DEFAULT);
+		//调用关系限流策略
+		qpsRule.setStrategy(RuleConstant.STRATEGY_RELATE);
+		//设置关联的资源
+		qpsRule.setRefResource("relate");
+        rules.add(qpsRule);
+		//将规则载入sentinel服务中生效
+        FlowRuleManager.loadRules(rules);
+    }
+```
+
+>- 如果访问/relate并发数大于或等于1，/qps则返回 “myBlockHandle”
+
 
