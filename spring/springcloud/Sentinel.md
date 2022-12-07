@@ -218,3 +218,80 @@ public class SentinelController {
 >- 如果访问/relate并发数大于或等于1，/qps则返回 “myBlockHandle”
 
 
+## 热点数据
+
+何为热点？热点即经常访问的数据。很多时候我们希望统计某个热点数据中访问频次最高的 Top K 数据，并对其访问进行限制。比如：
+
+* 商品 ID 为参数，统计一段时间内最常购买的商品 ID 并进行限制
+* 用户 ID 为参数，针对一段时间内频繁访问的用户 ID 进行限制
+
+### Dashboard
+![](./pic/hotkey-rule.png)
+
+资源名：API  
+参数索引：参数在资源中的索引位置  
+单机阈值：每秒可接受的请求上限  
+统计窗口时长：
+
+参数类型：指定‘参数值’的类型，仅支持基本类型和字符串类型，
+参数值：‘参数索引’的参数达到‘参数值’，次数为‘限流阈值’时触发限流
+限流阈值：每秒可接受的请求上限
+>- 高级选项中，可以针对指定的参数值单独设置限流阈值，
+- 不受前面单机阈值的限制。仅支持基本类型和字符串类型
+
+
+
+### JAVA API
+
+热点参数规则（ParamFlowRule）类似于流量控制规则（FlowRule）：
+
+| **属性** | **说明** | **默认值** |
+| --- | --- | --- |
+| resource | 资源名，必填 |  |
+| count | 限流阈值，必填 |  |
+| grade | 限流模式 | QPS 模式 |
+| durationInSec | 统计窗口时间长度（单位为秒），1.6.0 版本开始支持 | 1s |
+| controlBehavior | 流控效果（支持快速失败和匀速排队模式），1.6.0 版本开始支持 | 快速失败 |
+| maxQueueingTimeMs | 最大排队等待时长（仅在匀速排队模式生效），1.6.0 版本开始支持 | 0ms |
+| paramIdx | 热点参数的索引，必填，对应 SphU.entry(xxx, args) 中的参数索引位置 |  |
+| paramFlowItemList | 参数例外项，可以针对指定的参数值单独设置限流阈值，不受前面 count 阈值的限制。**仅支持基本类型和字符串类型** |  |
+| clusterMode | 是否是集群参数流控规则 | false |
+| clusterConfig | 集群流控相关配置 |  |
+
+测试接口
+```
+@GetMapping("/byHotKey")
+@SentinelResource(value = "byHotKey",blockHandler = "userAccessError")
+public String test4(String userId,int goodId){
+	log.info(Thread.currentThread().getName() + "\t" + "...byHotKey");
+	return "-----------by HotKey： UserId";
+}
+```
+
+限流规则
+```
+ParamFlowRule rule = new ParamFlowRule(resourceName)
+    .setParamIdx(0)
+    .setCount(5);
+// 针对 int 类型的参数 PARAM_B，单独设置限流 QPS 阈值为 10，而不是全局的阈值 5.
+ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(PARAM_B))
+    .setClassType(int.class.getName())
+    .setCount(10);
+rule.setParamFlowItemList(Collections.singletonList(item));
+ 
+ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
+
+
+
+
+ParamFlowRule pRule = new ParamFlowRule("byHotKey")
+                .setParamIdx(1)
+                .setCount(1);
+// 针对 参数值1000，单独设置限流 QPS 阈值为 5，而不是全局的阈值 1.
+        ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(1000))
+                .setClassType(int.class.getName())
+                .setCount(5);
+        pRule.setParamFlowItemList(Collections.singletonList(item));
+ 
+        ParamFlowRuleManager.loadRules(Collections.singletonList(pRule));
+```
