@@ -142,7 +142,7 @@ public class SentinelController {
     }
 	
     @GetMapping("/relate")
-    @SentinelResource(value = "relate", blockHandler = "myBlockHandle")
+    @SentinelResource(value = "relate", blockHandler = "myBlockHandler")
     public String relateTest() throws InterruptedException {
 
 		Thread.sleep(10 * 1000);
@@ -152,9 +152,9 @@ public class SentinelController {
 	
 	
 	//自定义处理器
-    public String myBlockHandle(BlockException blockException){
+    public String myBlockHandler(BlockException blockException){
 		
-        return "myBlockHandle";
+        return "myBlockHandler";
 
     }
 
@@ -185,10 +185,10 @@ public class SentinelController {
     }
 ```
 
->- 如果一秒内请求/qps超过2次则返回 “myBlockHandle”
+>- 如果一秒内请求/qps超过2次则返回 “myBlockHandler”
 
 
-1. 创建限流规则：QPS，关联，排队等待
+2. 创建限流规则：QPS，关联，排队等待
 
 
 ```
@@ -215,7 +215,7 @@ public class SentinelController {
     }
 ```
 
->- 如果访问/relate并发数大于或等于1，/qps则返回 “myBlockHandle”
+>- 如果访问/relate并发数大于或等于1，/qps则返回 “myBlockHandler”
 
 
 ## 热点数据
@@ -260,38 +260,55 @@ public class SentinelController {
 
 测试接口
 ```
-@GetMapping("/byHotKey")
-@SentinelResource(value = "byHotKey",blockHandler = "userAccessError")
-public String test4(String userId,int goodId){
-	log.info(Thread.currentThread().getName() + "\t" + "...byHotKey");
-	return "-----------by HotKey： UserId";
+@GetMapping("/hotkey")
+@SentinelResource(value = "hotkey",blockHandler = "myBlockHandler1")
+public String hotkeyTest(Integer goodId, String userType){
+    return "goodId: " + goodId + " userType: " + userType;
+}
+
+//自定义BlockHandler
+public String myBlockHandler1(Integer goodId, String userType, BlockException blockException){
+    return "myBlockHandler";
 }
 ```
 
-限流规则
+1. 创建限流规则：QPS，第一个参数值如为10，阈值为2，否则阈值为4，限流处理默认为快速失败
+
 ```
-ParamFlowRule rule = new ParamFlowRule(resourceName)
-    .setParamIdx(0)
-    .setCount(5);
-// 针对 int 类型的参数 PARAM_B，单独设置限流 QPS 阈值为 10，而不是全局的阈值 5.
-ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(PARAM_B))
-    .setClassType(int.class.getName())
-    .setCount(10);
-rule.setParamFlowItemList(Collections.singletonList(item));
- 
-ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
+//对特殊商品进行流控限制
+    private static void setHotKeyRuleManager(){
+
+        ParamFlowRule rule = new ParamFlowRule("hotkey")
+                .setParamIdx(0)
+                .setCount(4);
+        // 针对 int 类型的参数 10，单独设置限流 QPS 阈值为 2，而不是全局的阈值 4.
+        ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(10))
+                .setClassType(Integer.class.getName())
+                .setCount(2);
+        rule.setParamFlowItemList(Collections.singletonList(item));
+
+        ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
+	}
+```
+>- 访问/hotkey, qps超过4，返回自定义BlockHandler内容；如goodId为10，则qps超过2，返回自定义BlockHandler内容  
 
 
+2. 创建限流规则：QPS，第二个参数值如为“vip”，阈值为50，否则阈值为4，限流处理默认为快速失败
 
-
-ParamFlowRule pRule = new ParamFlowRule("byHotKey")
+```
+//对vip用户放宽流控限制
+    private static void setHotKeyRuleManager(){
+		
+        ParamFlowRule pRule = new ParamFlowRule("hotkey")
                 .setParamIdx(1)
-                .setCount(1);
-// 针对 参数值1000，单独设置限流 QPS 阈值为 5，而不是全局的阈值 1.
-        ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(1000))
-                .setClassType(int.class.getName())
-                .setCount(5);
-        pRule.setParamFlowItemList(Collections.singletonList(item));
- 
+                .setCount(4);
+        // 针对 参数值vip，单独设置限流 QPS 阈值为 50，而不是全局的阈值 4.
+        ParamFlowItem item1 = new ParamFlowItem().setObject("vip")
+                .setClassType(String.class.getName())
+                .setCount(50);
+        pRule.setParamFlowItemList(Collections.singletonList(item1));
+
         ParamFlowRuleManager.loadRules(Collections.singletonList(pRule));
+	}
 ```
+> 访问/hotkey, qps超过4，返回自定义BlockHandler内容；如userType为“vip”，则qps超过50，返回自定义BlockHandler内容  
