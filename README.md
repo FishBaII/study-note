@@ -1,6 +1,7 @@
 # study-note
 
 ### Spring
+* [SpringBoot SPI](https://github.com/FishBaII/study-note/blob/main/spring/springbootSPI/SpringBootSPI.md)
 
 ### SpringCloud
 * [Sentinel](https://github.com/FishBaII/study-note/blob/main/spring/springcloud/Sentinel.md)

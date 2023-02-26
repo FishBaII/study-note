@@ -6,7 +6,10 @@ Java SPI就是提供这样的一个机制：为某个接口寻找服务实现的
 
 ## 初始化
 
-1. **创建一个SpringBoot项目名为third，实现三个功能：获取properties的key值，查询指定Table的数据，一个任意的静态工具方法**
+third组件源码: https://github.com/FishBaII/study-note/blob/main/spring/springbootSPI/third
+parent组件使用者源码：https://github.com/FishBaII/study-note/blob/main/spring/springbootSPI/parent
+
+1. **创建一个SpringBoot项目名为third，作为组件，实现三个功能：获取properties的key值，查询指定Table的数据，一个任意的静态工具方法**
 
 pom.xml：
 ```
