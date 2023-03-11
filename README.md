@@ -17,6 +17,7 @@
 
 ### java
 * [JDK9-11新特性](https://github.com/FishBaII/study-note/blob/main/java/newFeatures/JDK-Features.md)
+* [JDK HttpClient](https://github.com/FishBaII/study-note/blob/main/java/HttpClientInJDK11.md)
 
 
 
