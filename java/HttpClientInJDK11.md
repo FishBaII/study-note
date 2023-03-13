@@ -315,7 +315,7 @@ public class HttpConnector {
      * @throws InterruptedException 线程等待
      */
     public <T> T doPost(String url,Map<String ,Object> form,Class<T> resClass) throws IOException, InterruptedException {
-        HttpRequest httpRequest = buildPostRequest(url,form);
+        HttpRequest httpRequest = buildPostRequestByJson(url,form);
         return response(httpRequest,resClass);
     }
  
