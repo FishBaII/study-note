@@ -35,3 +35,53 @@
         </plugins>
     </build>
 ```
+
+## 无maven，纯java项目的打包
+
+打包清单MANIFEST.MF
+```
+Manifest-Version: 1.0
+Main-Class: com.ljm.main.Main
+```
+
+打包脚本bat
+```
+@ECHO OFF
+SETLOCAL enableDelayedExpansion  
+  
+SET cur_dir=%CD%    
+echo %cur_dir%  rem 当前目录 即项目所在目录
+
+
+SET qddemo=D:\workspace\simpleJava
+SET qddemo_src=D:\workspace\simpleJava\src
+rem %cur_dir%\simpleJava\src
+SET qddemo_bin=D:\workspace\simpleJava\bin
+rem %cur_dir%\bin    
+SET qddemo_class=D:\workspace\simpleJava\class 
+rem %cur_dir%\class
+
+echo %qddemo_class%
+echo %qddemo_bin%
+
+IF EXIST %qddemo_class%	RMDIR %qddemo_class%
+IF NOT EXIST %qddemo_class%  MKDIR %qddemo_class% 
+
+cd %cur_dir%
+CD %qddemo_src%
+FOR /R %%b IN ( . ) DO (
+IF EXIST %%b/*.java  SET JFILES=!JFILES! %%b/*.java
+)
+
+cd %cur_dir%  
+
+    javac -d %qddemo_class% -encoding utf-8 -cp .;%qddemo_bin%\commons-lang-2.6.jar %JFILES% 
+   
+cd %qddemo_class%  
+    jar -cvfm %qddemo%\super.jar %qddemo%\MANIFEST.MF *  
+
+echo "successfully"
+
+pause
+```
+
