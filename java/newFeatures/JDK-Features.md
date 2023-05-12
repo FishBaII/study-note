@@ -134,20 +134,20 @@ G1的相关参数与说明如下：
 
 
 
-|参数	|	介绍|
-|--	|--	|
-|	-XX:+UseG1GC	|开启使用G1垃圾收集器|
-|	-XX:ParallelGCThreads	|	指定GC工作的线程数量	|
-|	-XX:G1HeapRegionSize	|	指定分区大小(1MB~32MB，且必须是2的N次幂)，默认将整堆划分为2048个分区	|
-|-XX:MaxGCPauseMillis	|目标暂停(STW)时间(默认200ms)
-|-XX:G1NewSizePercent	|新生代内存初始空间(默认整堆5%，值配置整数，比如5，默认就是百分比)
-|-XX:G1MaxNewSizePercent	|新生代内存最大空间(最大60%，值配置整数)
-|-XX:TargetSurvivorRatio	|Survivor区的填充容量(默认50%)，Survivor区域里的一批对象(年龄1+年龄2+年龄n的多个年龄对象)总和超过了Survivor区域的50%，此时就会把年龄n(含)以上的对象都放入老年代
-|-XX:MaxTenuringThreshold	|最大年龄阈值(默认15)
-|-XX:InitiatingHeapOccupancyPercent	|老年代占用空间达到整堆内存阈值(默认45%)，则执行新生代和老年代的混合收集(MixedGC)，比如堆默认有2048个region，如果有接近1000个region都是老年代的region，则可能就要触发MixedGC了
-|-XX:G1MixedGCLiveThresholdPercent	|默认85%，Region中的存活对象低于这个值时才会回收该Region，如果超过这个值，存活对象过多，回收的的意义不大
-|-XX:G1MixedGCCountTarget	|在一次回收过程中指定做几次筛选回收(默认8次)，在最后一个筛选回收阶段可以回收一会，然后暂停回收，恢复系统运行，一会再开始回收，这样可以让系统不至于单次停顿时间过长。
-|-XX:G1HeapWastePercent	|默认5%，一旦空闲出来的Region数量达到了堆内存的5%，此时就会立即停止混合回收
+| 参数	                                 | 	介绍                                                                                                            |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| 	-XX:+UseG1GC	                      | 开启使用G1垃圾收集器                                                                                                    |
+| 	-XX:ParallelGCThreads	             | 	指定GC工作的线程数量	                                                                                                  |
+| 	-XX:G1HeapRegionSize	              | 	指定分区大小(1MB~32MB，且必须是2的N次幂)，默认将整堆划分为2048个分区	                                                                   |
+| -XX:MaxGCPauseMillis	               | 目标暂停(STW)时间(默认200ms)                                                                                           |
+| -XX:G1NewSizePercent	               | 新生代内存初始空间(默认整堆5%，值配置整数，比如5，默认就是百分比)                                                                            |
+| -XX:G1MaxNewSizePercent	            | 新生代内存最大空间(最大60%，值配置整数)                                                                                         |
+| -XX:TargetSurvivorRatio	            | Survivor区的填充容量(默认50%)，Survivor区域里的一批对象(年龄1+年龄2+年龄n的多个年龄对象)总和超过了Survivor区域的50%，此时就会把年龄n(含)以上的对象都放入老年代           |
+| -XX:MaxTenuringThreshold	           | 最大年龄阈值(默认15)                                                                                                   |
+| -XX:InitiatingHeapOccupancyPercent	 | 老年代占用空间达到整堆内存阈值(默认45%)，则执行新生代和老年代的混合收集(MixedGC)，比如堆默认有2048个region，如果有接近1000个region都是老年代的region，则可能就要触发MixedGC了 |
+| -XX:G1MixedGCLiveThresholdPercent	  | 默认85%，Region中的存活对象低于这个值时才会回收该Region，如果超过这个值，存活对象过多，回收的的意义不大                                                    |
+| -XX:G1MixedGCCountTarget	           | 在一次回收过程中指定做几次筛选回收(默认8次)，在最后一个筛选回收阶段可以回收一会，然后暂停回收，恢复系统运行，一会再开始回收，这样可以让系统不至于单次停顿时间过长。                            |
+| -XX:G1HeapWastePercent	             | 默认5%，一旦空闲出来的Region数量达到了堆内存的5%，此时就会立即停止混合回收                                                                     |
 
 -------
 
