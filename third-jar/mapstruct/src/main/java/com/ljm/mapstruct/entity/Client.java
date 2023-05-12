@@ -1,12 +1,14 @@
-package com.example.demo.dto;
+package com.ljm.mapstruct.entity;
 
-public class ClientDto {
+import java.time.LocalDate;
+
+public class Client {
 
     private Long id;
 
     private String name;
 
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
 
     public Long getId() {
         return id;
@@ -24,11 +26,11 @@ public class ClientDto {
         this.name = name;
     }
 
-    public String getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public void setDateOfBirth(String dateOfBirth) {
+    public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 }

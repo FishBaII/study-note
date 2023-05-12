@@ -1,10 +1,10 @@
-package com.example.demo.entity;
+package com.ljm.mapstruct.dto;
 
-public class Doctor {
+public class DoctorDto {
     private int id;
     private String name;
 
-    private String specialty;
+    private String specialization;
 
     public int getId() {
         return id;
@@ -22,11 +22,13 @@ public class Doctor {
         this.name = name;
     }
 
-    public String getSpecialty() {
-        return specialty;
+    public String getSpecialization() {
+        return specialization;
     }
 
-    public void setSpecialty(String specialty) {
-        this.specialty = specialty;
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
     }
+
+
 }

@@ -1,13 +1,11 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.ClientDto;
-import com.example.demo.entity.Client;
+import com.ljm.mapstruct.dto.ClientDto;
+import com.ljm.mapstruct.entity.Client;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

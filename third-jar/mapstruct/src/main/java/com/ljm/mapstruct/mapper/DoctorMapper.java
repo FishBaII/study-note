@@ -1,7 +1,7 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.DoctorDto;
-import com.example.demo.entity.Doctor;
+import com.ljm.mapstruct.dto.DoctorDto;
+import com.ljm.mapstruct.entity.Doctor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

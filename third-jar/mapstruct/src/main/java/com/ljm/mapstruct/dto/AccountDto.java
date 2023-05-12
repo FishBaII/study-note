@@ -1,6 +1,4 @@
-package com.example.demo.dto;
-
-import com.example.demo.entity.Client;
+package com.ljm.mapstruct.dto;
 
 import java.util.ArrayList;
 import java.util.List;

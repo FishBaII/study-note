@@ -1,8 +1,7 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.AccountDto;
-import com.example.demo.entity.Account;
-import org.mapstruct.CollectionMappingStrategy;
+import com.ljm.mapstruct.dto.AccountDto;
+import com.ljm.mapstruct.entity.Account;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

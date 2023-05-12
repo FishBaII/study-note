@@ -1,4 +1,4 @@
-package com.example.demo.valid;
+package com.ljm.mapstruct.valid;
 
 import org.springframework.stereotype.Component;
 

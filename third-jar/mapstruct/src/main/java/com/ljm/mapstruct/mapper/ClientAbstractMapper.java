@@ -1,8 +1,8 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.ClientDto;
-import com.example.demo.entity.Client;
-import com.example.demo.valid.Validator;
+import com.ljm.mapstruct.dto.ClientDto;
+import com.ljm.mapstruct.entity.Client;
+import com.ljm.mapstruct.valid.Validator;
 import org.mapstruct.*;
 
 import javax.xml.bind.ValidationException;

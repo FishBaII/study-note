@@ -1,7 +1,7 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.ClientDto;
-import com.example.demo.entity.Client;
+import com.ljm.mapstruct.dto.ClientDto;
+import com.ljm.mapstruct.entity.Client;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,7 +56,7 @@ class ClientMapperTest {
     }
 
     @Test
-    void clientAbstractMapperTestWithException() throws ValidationException {
+    void clientAbstractMapperTestWithException(){
 
         Client client = new Client();
         client.setName("tom");

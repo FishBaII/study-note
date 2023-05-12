@@ -1,4 +1,4 @@
-package com.example.demo.entity;
+package com.ljm.mapstruct.entity;
 
 import java.util.List;
 

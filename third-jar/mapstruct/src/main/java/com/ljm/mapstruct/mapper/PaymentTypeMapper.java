@@ -1,11 +1,10 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.payment.PaymentType;
-import com.example.demo.payment.PaymentTypeView;
+import com.ljm.mapstruct.payment.PaymentType;
+import com.ljm.mapstruct.payment.PaymentTypeView;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ValueMapping;
-import org.mapstruct.ValueMappings;
 import org.mapstruct.factory.Mappers;
 
 @Mapper

@@ -1,15 +1,13 @@
-package com.example.demo.mapper;
+package com.ljm.mapstruct.mapper;
 
-import com.example.demo.dto.AccountDto;
-import com.example.demo.dto.ClientDto;
-import com.example.demo.dto.DoctorDto;
-import com.example.demo.entity.Account;
-import com.example.demo.entity.Client;
-import com.example.demo.entity.Doctor;
+import com.ljm.mapstruct.dto.AccountDto;
+import com.ljm.mapstruct.dto.ClientDto;
+import com.ljm.mapstruct.dto.DoctorDto;
+import com.ljm.mapstruct.entity.Account;
+import com.ljm.mapstruct.entity.Client;
+import com.ljm.mapstruct.entity.Doctor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.util.Assert;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
