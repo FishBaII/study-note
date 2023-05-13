@@ -67,4 +67,15 @@ class ClientMapperTest {
             ClientDto clientDto = clientAbstractMapper.toDto(client);
         });
     }
+
+    @Test
+    void clientMapperTestWithNullName(){
+
+        Client client = new Client();
+        client.setName(null);
+        client.setId(-1L);
+        client.setDateOfBirth(null);
+        ClientDto clientDto = ClientMapper.INSTANCE.toDto(client);
+        assertEquals("default", clientDto.getName());
+    }
 }
