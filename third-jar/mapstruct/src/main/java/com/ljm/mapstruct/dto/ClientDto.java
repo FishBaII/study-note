@@ -8,6 +8,8 @@ public class ClientDto {
 
     private String dateOfBirth;
 
+    private String email;
+
     public Long getId() {
         return id;
     }
@@ -30,5 +32,13 @@ public class ClientDto {
 
     public void setDateOfBirth(String dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -10,6 +10,8 @@ public class Client {
 
     private LocalDate dateOfBirth;
 
+    private String email;
+
     public Long getId() {
         return id;
     }
@@ -32,5 +34,13 @@ public class Client {
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -96,17 +96,24 @@ class DoctorMapperTest {
     @Test
     void clientMapperTest(){
 
-        Client client = new Client();
-        client.setName("tom");
-        client.setId(1L);
-        client.setDateOfBirth(LocalDate.now());
+        Client client1 = new Client();
+        client1.setName("tom");
+        client1.setId(1L);
+        client1.setDateOfBirth(LocalDate.now());
+        Client client2 = new Client();
+        client2.setName("kitty");
+        client2.setId(2L);
+        client2.setDateOfBirth(LocalDate.now());
         List<Client> clientList = new ArrayList<>();
-        clientList.add(client);
+        clientList.add(client1);
+        clientList.add(client2);
 
-        List<ClientDto> clientDtoList = ClientMapper.INSTANCE.map(clientList);
+        List<ClientDto> clientDtoList = ClientMapper.INSTANCE.listToDtoList(clientList);
         DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MMM/yyyy");
         assertEquals(1L, clientDtoList.get(0).getId());
         assertEquals("tom", clientDtoList.get(0).getName());
+        assertEquals(2L, clientDtoList.get(1).getId());
+        assertEquals("kitty", clientDtoList.get(1).getName());
         assertEquals(LocalDate.now().format(df), clientDtoList.get(0).getDateOfBirth());
     }
 }

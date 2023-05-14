@@ -19,15 +19,13 @@ public interface ClientMapper {
 
     ClientMapper INSTANCE = Mappers.getMapper(ClientMapper.class);
     @Mapping(source = "dateOfBirth", target = "dateOfBirth", dateFormat = "dd/MMM/yyyy")
-    //@Mapping(source = "price", target = "price", numberFormat = "$#.00")
-    //@Mapping(source = "client.name", target = "name", defaultValue = "default name")
-    //@Mapping(source = "dateOfBirth", target = "dateOfBirth", defaultExpression = "java(LocalDateTime.now().format(DateTimeFormatter.ofPattern(\"dd/MMM/yyyy\")))")
     @Mapping(source = "name", target = "name", defaultExpression = "java(SystemUtil.getName())")
     ClientDto toDto(Client Client);
 
 
     //use method 'toDto' if exist
-    List<ClientDto> map(List<Client> clientList);
+    List<ClientDto> listToDtoList(List<Client> clientList);
+
 
     Set<ClientDto> setConvert(Set<Client> clientSet);
 

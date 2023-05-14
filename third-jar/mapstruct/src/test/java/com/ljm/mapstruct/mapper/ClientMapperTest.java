@@ -33,7 +33,7 @@ class ClientMapperTest {
         List<Client> clientList = new ArrayList<>();
         clientList.add(client);
 
-        List<ClientDto> clientDtoList = clientMapper.map(clientList);
+        List<ClientDto> clientDtoList = clientMapper.listToDtoList(clientList);
         DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MMM/yyyy");
         assertEquals(1L, clientDtoList.get(0).getId());
         assertEquals("tom", clientDtoList.get(0).getName());
