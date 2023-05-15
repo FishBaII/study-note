@@ -17,6 +17,8 @@ public class OrderDto {
 
     private String remark;
 
+    private String currency;
+
     public Long getId() {
         return id;
     }
@@ -63,5 +65,26 @@ public class OrderDto {
 
     public void setPrice(String price) {
         this.price = price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderDto{" +
+                "id=" + id +
+                ", accountNumber='" + accountNumber + '\'' +
+                ", amount=" + amount +
+                ", price='" + price + '\'' +
+                ", orderTime='" + orderTime + '\'' +
+                ", remark='" + remark + '\'' +
+                ", currency='" + currency + '\'' +
+                '}';
     }
 }

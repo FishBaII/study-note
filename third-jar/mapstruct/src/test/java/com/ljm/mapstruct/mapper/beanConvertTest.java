@@ -7,23 +7,67 @@ import org.mockito.internal.matchers.Or;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class beanConvertTest {
 
     @Test
     void simpleConvertTest(){
 
-        Order order = new Order();
-        //skip init data
-        order.setPrice(new BigDecimal("3.0111"));
+        Order order = orderInit();
 
         OrderDto orderDto = new OrderDto();
-        orderDto.setAmount(order.getAmount());
-        orderDto.setId(order.getId());
         orderDto.setAccountNumber(order.getAccountNumber());
-        // 3.0111 --> $3.01
-        orderDto.setPrice("$" + order.getPrice().setScale(2, RoundingMode.HALF_UP));
         orderDto.setRemark("DEFAULT REMARK");
 
+        // 1.51 --> 2
+        orderDto.setAmount(halfUp(order.getAmount()));
+        // 3.0111 --> $3.01
+        if (order.getPrice() != null) {
+            orderDto.setPrice(this.createDecimalFormat("$#.00").format(order.getPrice()));
+        }
+
+        if (order.getId() != null) {
+            orderDto.setId(order.getId());
+        } else {
+            orderDto.setId(-1L);
+        }
+
+        if (order.getOrderTime() != null) {
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("yyy-MM-dd HH:mm:ss");
+            orderDto.setOrderTime(order.getOrderTime().format(df));
+        }
+
+        System.out.println(orderDto);
+
+
+
+    }
+
+    private Order orderInit(){
+        Order order = new Order();
+        order.setId(1L);
+        order.setOrderTime(LocalDateTime.now());
+        order.setPrice(new BigDecimal("3.0111"));
+        order.setAmount(new BigDecimal("1.36"));
+        order.setAccountNumber("P-00000001");
+        order.setRemark("this is remark");
+        return order;
+
+    }
+
+    private DecimalFormat createDecimalFormat(String numberFormat) {
+        DecimalFormat df = new DecimalFormat(numberFormat);
+        df.setParseBigDecimal(true);
+        return df;
+    }
+
+    private BigDecimal halfUp(BigDecimal price){
+        if(price == null){
+            return BigDecimal.ZERO;
+        }
+        return price.setScale(0, RoundingMode.HALF_UP);
     }
 }

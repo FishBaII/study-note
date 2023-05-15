@@ -18,6 +18,8 @@ public class Order {
 
     private String remark;
 
+    private String currency;
+
     public Long getId() {
         return id;
     }
@@ -64,5 +66,13 @@ public class Order {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }
