@@ -4,12 +4,16 @@ import com.ljm.mapstruct.dto.OrderDto;
 import com.ljm.mapstruct.entity.Order;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.matchers.Or;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class beanConvertTest {
 
@@ -40,9 +44,23 @@ public class beanConvertTest {
             orderDto.setOrderTime(order.getOrderTime().format(df));
         }
 
-        System.out.println(orderDto);
+        assertEquals("$3.01", orderDto.getPrice());
+        assertEquals("1", orderDto.getAmount().toString());
+        assertTrue(orderDto.getOrderTime() instanceof String);
 
 
+
+    }
+
+    @Test
+    void springCopyPropertiesTest(){
+
+        Order order = orderInit();
+        OrderDto orderDto = new OrderDto();
+        BeanUtils.copyProperties(order, orderDto, OrderDto.class);
+
+        assertNull(orderDto.getOrderTime());
+        assertNull(orderDto.getPrice());
 
     }
 
