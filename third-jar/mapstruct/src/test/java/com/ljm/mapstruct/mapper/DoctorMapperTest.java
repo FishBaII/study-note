@@ -32,7 +32,7 @@ class DoctorMapperTest {
 
         DoctorDto doctorDto = DoctorMapper.INSTANCE.toDto(doctor);
         assertEquals("tom", doctorDto.getName());
-        assertEquals("psychology", doctorDto.getSpecialization());
+        assertEquals("psychology", doctorDto.getSpecialty());
 
     }
 

@@ -16,7 +16,7 @@ public class Order {
 
     private LocalDateTime orderTime;
 
-    private String remark;
+    private String version;
 
     private String currency;
 
@@ -52,12 +52,12 @@ public class Order {
         this.orderTime = orderTime;
     }
 
-    public String getRemark() {
-        return remark;
+    public String getVersion() {
+        return version;
     }
 
-    public void setRemark(String remark) {
-        this.remark = remark;
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public BigDecimal getPrice() {

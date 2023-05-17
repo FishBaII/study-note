@@ -4,7 +4,7 @@ public class DoctorDto {
     private int id;
     private String name;
 
-    private String specialization;
+    private String specialty;
 
     public int getId() {
         return id;
@@ -22,13 +22,11 @@ public class DoctorDto {
         this.name = name;
     }
 
-    public String getSpecialization() {
-        return specialization;
+    public String getSpecialty() {
+        return specialty;
     }
 
-    public void setSpecialization(String specialization) {
-        this.specialization = specialization;
+    public void setSpecialty(String specialty) {
+        this.specialty = specialty;
     }
-
-
 }

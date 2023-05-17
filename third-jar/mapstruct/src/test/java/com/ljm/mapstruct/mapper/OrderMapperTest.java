@@ -21,10 +21,10 @@ class OrderMapperTest {
     void toDtoWithDefaultRemark() {
 
         Order order = new Order();
-        order.setRemark("test");
+        order.setVersion("0.0.1");
 
         OrderDto orderDto = orderMapper.toDto(order);
-        assertEquals("default remark", orderDto.getRemark());
+        assertEquals("3.0.0", orderDto.getVersion());
     }
 
 
@@ -69,7 +69,7 @@ class OrderMapperTest {
         OrderDto orderDto = new OrderDto();
         orderDto.setPrice("$82.99");
         orderDto.setAmount(new BigDecimal("145.815"));
-        orderDto.setRemark("remark");
+        orderDto.setVersion("0.0.1");
 
         Order order = orderMapper.toModel(orderDto);
         assertEquals("82.99", order.getPrice().toString());

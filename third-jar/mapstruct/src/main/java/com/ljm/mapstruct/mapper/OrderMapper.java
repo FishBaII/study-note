@@ -3,6 +3,7 @@ package com.ljm.mapstruct.mapper;
 import com.ljm.mapstruct.dto.OrderDto;
 import com.ljm.mapstruct.entity.Order;
 import org.mapstruct.*;
+import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -13,11 +14,21 @@ import java.math.RoundingMode;
 public interface OrderMapper
 {
 
-    @Mapping(target = "remark", constant = "default remark")
-    @Mapping(target = "amount", source = "amount", qualifiedByName = "halfUp")
-    @Mapping(target = "price", source = "price", numberFormat = "$#.00")
+    OrderMapper INSTANCE = Mappers.getMapper(OrderMapper.class);
+
+
+    // set default value if empty
     @Mapping(target = "id", source = "id", defaultValue = "-1L")
-    @Mapping(source = "orderTime", target = "orderTime", dateFormat = "yyy-MM-dd HH:mm:ss")
+    // set constant value
+    @Mapping(target = "version", constant = "3.0.0")
+    // use custom method
+    @Mapping(target = "amount", source = "amount", qualifiedByName = "halfUp")
+    // set format for number
+    @Mapping(target = "price", source = "price", numberFormat = "$#.00")
+    // set format for date or dateTime
+    @Mapping(source = "orderTime", target = "orderTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    // set target with different name
+    @Mapping(source = "currency", target = "cur")
     OrderDto toDto(Order order);
 
     @InheritInverseConfiguration
@@ -28,7 +39,7 @@ public interface OrderMapper
 
     @Named("halfUp")
     static BigDecimal halfUp(BigDecimal price){
-        if(price == null){
+        if(price == null || price.compareTo(BigDecimal.ZERO) < 0){
             return BigDecimal.ZERO;
         }
         return price.setScale(0, RoundingMode.HALF_UP);

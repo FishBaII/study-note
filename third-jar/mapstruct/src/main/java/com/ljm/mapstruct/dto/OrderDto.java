@@ -15,9 +15,9 @@ public class OrderDto {
 
     private String orderTime;
 
-    private String remark;
+    private String version;
 
-    private String currency;
+    private String cur;
 
     public Long getId() {
         return id;
@@ -51,12 +51,12 @@ public class OrderDto {
         this.orderTime = orderTime;
     }
 
-    public String getRemark() {
-        return remark;
+    public String getVersion() {
+        return version;
     }
 
-    public void setRemark(String remark) {
-        this.remark = remark;
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public String getPrice() {
@@ -67,13 +67,14 @@ public class OrderDto {
         this.price = price;
     }
 
-    public String getCurrency() {
-        return currency;
+    public String getCur() {
+        return cur;
     }
 
-    public void setCurrency(String currency) {
-        this.currency = currency;
+    public void setCur(String cur) {
+        this.cur = cur;
     }
+
 
     @Override
     public String toString() {
@@ -83,8 +84,8 @@ public class OrderDto {
                 ", amount=" + amount +
                 ", price='" + price + '\'' +
                 ", orderTime='" + orderTime + '\'' +
-                ", remark='" + remark + '\'' +
-                ", currency='" + currency + '\'' +
+                ", version='" + version + '\'' +
+                ", cur='" + cur + '\'' +
                 '}';
     }
 }

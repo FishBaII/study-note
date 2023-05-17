@@ -1,11 +1,10 @@
 package com.ljm.mapstruct.mapper;
 
+import com.alibaba.fastjson2.JSON;
 import com.ljm.mapstruct.dto.OrderDto;
 import com.ljm.mapstruct.entity.Order;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.matchers.Or;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeansException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,18 +14,19 @@ import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class beanConvertTest {
+public class BeanMapTest {
 
     @Test
-    void simpleConvertTest(){
+    void simpleMapTest(){
 
         Order order = orderInit();
 
         OrderDto orderDto = new OrderDto();
         orderDto.setAccountNumber(order.getAccountNumber());
-        orderDto.setRemark("DEFAULT REMARK");
-
-        // 1.51 --> 2
+        orderDto.setCur(order.getCurrency());
+        //set constant
+        orderDto.setVersion("3.0.0");
+        // 1.51 --> 2;  -2 --> 0; null --> 0
         orderDto.setAmount(halfUp(order.getAmount()));
         // 3.0111 --> $3.01
         if (order.getPrice() != null) {
@@ -40,7 +40,7 @@ public class beanConvertTest {
         }
 
         if (order.getOrderTime() != null) {
-            DateTimeFormatter df = DateTimeFormatter.ofPattern("yyy-MM-dd HH:mm:ss");
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             orderDto.setOrderTime(order.getOrderTime().format(df));
         }
 
@@ -48,8 +48,19 @@ public class beanConvertTest {
         assertEquals("1", orderDto.getAmount().toString());
         assertTrue(orderDto.getOrderTime() instanceof String);
 
+    }
 
+    private DecimalFormat createDecimalFormat(String numberFormat) {
+        DecimalFormat df = new DecimalFormat(numberFormat);
+        df.setParseBigDecimal(true);
+        return df;
+    }
 
+    private BigDecimal halfUp(BigDecimal price){
+        if(price == null || price.compareTo(BigDecimal.ZERO) < 0){
+            return BigDecimal.ZERO;
+        }
+        return price.setScale(0, RoundingMode.HALF_UP);
     }
 
     @Test
@@ -64,6 +75,18 @@ public class beanConvertTest {
 
     }
 
+
+    @Test
+    void jsonMapTest(){
+
+        Order order = orderInit();
+        String jsonStr = JSON.toJSONString(order);
+        OrderDto orderDto = JSON.parseObject(jsonStr, OrderDto.class);
+
+        assertNull(orderDto.getCur());
+
+    }
+
     private Order orderInit(){
         Order order = new Order();
         order.setId(1L);
@@ -71,21 +94,11 @@ public class beanConvertTest {
         order.setPrice(new BigDecimal("3.0111"));
         order.setAmount(new BigDecimal("1.36"));
         order.setAccountNumber("P-00000001");
-        order.setRemark("this is remark");
+        order.setVersion("0.0.1");
+        order.setCurrency("SGD");
         return order;
 
     }
 
-    private DecimalFormat createDecimalFormat(String numberFormat) {
-        DecimalFormat df = new DecimalFormat(numberFormat);
-        df.setParseBigDecimal(true);
-        return df;
-    }
 
-    private BigDecimal halfUp(BigDecimal price){
-        if(price == null){
-            return BigDecimal.ZERO;
-        }
-        return price.setScale(0, RoundingMode.HALF_UP);
-    }
 }
