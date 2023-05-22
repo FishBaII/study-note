@@ -87,6 +87,19 @@ public class BeanMapTest {
 
     }
 
+    @Test
+    void mapStructTest(){
+
+        Order order = orderInit();
+        OrderDto orderDto = OrderMapper.INSTANCE.toDto(order);
+
+        assertEquals("$3.01", orderDto.getPrice());
+        assertEquals("1", orderDto.getAmount().toString());
+        assertTrue(orderDto.getOrderTime() instanceof String);
+
+
+    }
+
     private Order orderInit(){
         Order order = new Order();
         order.setId(1L);
