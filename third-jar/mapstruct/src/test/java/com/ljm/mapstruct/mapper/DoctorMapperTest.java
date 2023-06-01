@@ -36,6 +36,21 @@ class DoctorMapperTest {
 
     }
 
+    @Test
+    void toDtoWithContext() {
+
+        Doctor doctor = new Doctor();
+        doctor.setId(1);
+        doctor.setName("tom");
+        doctor.setSpecialty("psychology");
+//        List<Doctor> list = new ArrayList<>();
+//        list.add(doctor);
+        DoctorDto doctorDto = DoctorMapper.INSTANCE.toDtoWithContext(doctor, "myContext");
+        assertEquals("tommyContext", doctorDto.getName());
+        assertEquals("psychology", doctorDto.getSpecialty());
+
+    }
+
 
     @Test
     void toAccountDto() {

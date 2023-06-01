@@ -28,7 +28,7 @@ public abstract class ClientAbstractMapper {
 
 
 //    @InheritInverseConfiguration
-//    public abstract Client toModel(ClientDto clientDto) throws ValidationException;
+    public abstract Client toModel(ClientDto clientDto) throws ValidationException;
 
     @InheritConfiguration
     public abstract void updateDto(Client Client, @MappingTarget ClientDto clientDto) throws ValidationException;

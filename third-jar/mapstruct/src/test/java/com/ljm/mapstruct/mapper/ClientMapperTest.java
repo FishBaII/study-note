@@ -78,4 +78,21 @@ class ClientMapperTest {
         ClientDto clientDto = ClientMapper.INSTANCE.toDto(client);
         assertEquals("default", clientDto.getName());
     }
+
+
+    @Test
+    void clientAbstractMapperUpdatedTest() throws ValidationException {
+
+        Client client = new Client();
+        client.setName("tom");
+        client.setId(1L);
+        client.setDateOfBirth(null);
+
+        ClientDto clientDto = new ClientDto();
+        clientAbstractMapper.updateDto(client, clientDto);
+        DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MMM/yyyy");
+        assertEquals(1L, clientDto.getId());
+        assertEquals("TOM", clientDto.getName());
+        assertEquals(LocalDate.now().format(df), clientDto.getDateOfBirth());
+    }
 }
