@@ -72,6 +72,8 @@ public class BeanMapTest {
 
         assertNull(orderDto.getOrderTime());
         assertNull(orderDto.getPrice());
+        assertNull(orderDto.getCur());
+
 
     }
 

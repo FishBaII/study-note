@@ -75,4 +75,17 @@ public class Order {
     public void setCurrency(String currency) {
         this.currency = currency;
     }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "id=" + id +
+                ", accountNumber='" + accountNumber + '\'' +
+                ", amount=" + amount +
+                ", price=" + price +
+                ", orderTime=" + orderTime +
+                ", version='" + version + '\'' +
+                ", currency='" + currency + '\'' +
+                '}';
+    }
 }
