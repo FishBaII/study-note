@@ -21,8 +21,9 @@ import java.util.List;
 public class SwaggerConfig {
 
     @Bean
-    public Docket docket() {
+    public Docket docketHi() {
         return new Docket(DocumentationType.OAS_30).apiInfo(apiInfo())
+                .groupName("hi")
                 // 配置扫描的接口
                 .select()
                 // 配置扫描指定包的接口
@@ -45,6 +46,39 @@ public class SwaggerConfig {
                 //regex(final String pathRegex) 通过正则表达式扫描
                 //ant(final String antPattern) 通过ant()指定请求扫描
                 .paths(PathSelectors.ant("/hi/**"))
+                .build()
+
+                // 设置是否启动Swagger，默认为true（不写即可），关闭后Swagger就不生效了
+                .enable(true)
+                ;
+    }
+
+    @Bean
+    public Docket docketOrder() {
+        return new Docket(DocumentationType.OAS_30).apiInfo(apiInfo())
+                .groupName("order")
+                // 配置扫描的接口
+                .select()
+                // 配置扫描指定包的接口
+                //RequestHandlerSelectors配置扫描路径的一些方法
+                // 扫描所有，项目中的所有接口都会被扫描到
+                //any()
+                // 不扫描接口
+                //none()
+                // 通过方法上的注解扫描，如withMethodAnnotation(GetMapping.class)只扫描get请求
+                //withMethodAnnotation(final Class<? extends Annotation> annotation)
+                // 通过类上的注解扫描，如.withClassAnnotation(Controller.class)只扫描有controller注解的类中的接口
+                // withClassAnnotation(final Class<? extends Annotation> annotation)
+                // 根据包路径扫描接口
+                //basePackage(final String basePackage)
+                .apis(RequestHandlerSelectors.basePackage("com.ljm.swagger.controller"))
+
+                // 过滤请求，只扫描请求以自定义开头的接口
+                //any() 任何请求都扫描
+                //none() 任何请求都不扫描
+                //regex(final String pathRegex) 通过正则表达式扫描
+                //ant(final String antPattern) 通过ant()指定请求扫描
+                .paths(PathSelectors.ant("/order/**"))
                 .build()
 
                 // 设置是否启动Swagger，默认为true（不写即可），关闭后Swagger就不生效了
