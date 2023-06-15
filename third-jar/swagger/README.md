@@ -214,11 +214,128 @@ public Docket docketEmployee() {
 
 ## Swagger说明注解
 
-| Swagger注解                                           | 	简单说明                            |
-|:----------------------------------------------------|:---------------------------------|
-| @Api(tags = "xxx模块说明")	                             | 作用在模块类上                          | 
-| @ApiOperation("xxx接口说明")	                           | 作用在接口方法上                         | 
-| @ApiModel("xxxPOJO说明")	                             | 作用在模型类上：如VO、BTO                  | 
-| @ApiModelProperty(value = "xxx属性说明",hidden = true)	 | 作用在类方法和属性上，hidden设置为true可以隐藏该属性  | 
-| @ApiParam("xxx参数说明")	                               | 作用在参数、方法和字段上，类似@ApiModelProperty | 
+| Swagger注解                                                                             | 	简单说明                            |
+|:--------------------------------------------------------------------------------------|:---------------------------------|
+| @Api(tags = "xxx模块说明")	                                                               | 作用在模块类上                          | 
+| @ApiOperation("xxx接口说明")	                                                             | 作用在接口方法上                         | 
+| @ApiModel("xxxPOJO说明")	                                                               | 作用在模型类上：如VO、BTO                  | 
+| @ApiModelProperty(value = "xxx属性说明",hidden = true)	                                   | 作用在类方法和属性上，hidden设置为true可以隐藏该属性  | 
+| @ApiParam("xxx参数说明")	                                                                 | 作用在参数、方法和字段上，类似@ApiModelProperty | 
+| @ApiImplicitParam(name = "参数名称", value = "描述", parameterType = "参数的位置，如请求头参数、路径参数等")	 | 放在方法上面,效果和@ApiParam一样，但是 这个注解范围更广,描述唯一的方法参数 | 
+| @ApiImplicitParams(value = {@ApiImplicitParam(xxx),@ApiImplicitParam(xxx)})	          | @ApiImplicitParam的集合，以数组的方式，放入注解中 | 
+| @ApiIgnore                                                              | 忽略这个接口，不生成文档 | 
+
+
+## swagger文件上传接口
+
+单个文件上传
+```
+    @PostMapping(value = "/simple")
+    public CommonResult uploadSimpleFile(@ApiParam(value = "upload file") @RequestPart() MultipartFile file){
+
+        logger.info(file.getOriginalFilename());
+
+        return CommonResult.success(null);
+
+    }
+```
+![](./pic/fileSimpleUpload.png)
+
+多个文件上传
+```
+    @PostMapping("/multiple")
+    public CommonResult uploadMultipleFile(@ApiParam(value = "upload files") @RequestPart() List<MultipartFile> files){
+
+        for(MultipartFile file: files){
+            logger.info(file.getOriginalFilename());
+        }
+
+        return CommonResult.success(null);
+
+    }
+```
+![](./pic/fileMultipleUpload.png)
+
+## swagger访问需要登陆权限的接口
+swagger可以设置授权信息来访问需要认证授权的API,有以下方法可以设置授权。
+
+### 声明header参数
+可以在指定API接口上使用@ApiImplicitParam来声明header需要的参数，如token,就可以在swagger访问接口时手动传入需要的header参数
+```
+@ApiImplicitParam(name = "token", value = "token in header", paramType = "header")
+```
+![](./pic/securityByAnnotate.png)  
+
+
+### swagger设置全局请求参数
+在swagger配置中强制所有API传入指定参数
+```
+@Bean
+public Docket docket() {
+   //构建一个公共请求参数platform，放在在header
+   RequestParameter parameter = new RequestParameterBuilder()
+      //参数名称
+      .name("token")
+      //描述
+      .description("authorize with token")
+      //放在header中
+      .in(ParameterType.HEADER)
+      //是否必传
+      .required(true)
+      .build();
+      //构建一个请求参数集合
+   List<RequestParameter> parameters = Collections.singletonList(parameter);
+   return new Docket(DocumentationType.OAS_30)
+       .....
+       .build()
+       .globalRequestParameters(parameters);
+}
+```
+![](./pic/globalRequestParamter.png)  
+
+### swagger设置全局授权信息
+swagger配置加上授权配置，swagger访问页面手动加上全局授权信息
+
+```
+@Configuration
+@EnableOpenApi
+public class SwaggerConfig {
+    @Bean
+    public Docket docket() {
+        return new Docket(DocumentationType.OAS_30)
+                //skip others
+                //...
+                
+                
+                .securitySchemes(securitySchemes())
+                .securityContexts(securityContexts())
+    }
+ 
+    /**
+     * 设置授权信息
+     */
+    private List<SecurityScheme> securitySchemes() {
+        ApiKey apiKey = new ApiKey("token", "token", In.HEADER.toValue());
+        return Collections.singletonList(apiKey);
+    }
+
+    /**
+     * 授权信息全局应用
+     */
+    private List<SecurityContext> securityContexts() {
+        return Collections.singletonList(
+                SecurityContext.builder()
+                        .securityReferences(Collections.singletonList(new SecurityReference("token", new AuthorizationScope[]{new AuthorizationScope("global", "")})))
+                        .build()
+        );
+
+    }
+    
+}    
+    
+```
+![](./pic/authorizeLogo.png)  
+![](./pic/authorizeInfo.png)  
+![](./pic/getAccess.png)  
+
 

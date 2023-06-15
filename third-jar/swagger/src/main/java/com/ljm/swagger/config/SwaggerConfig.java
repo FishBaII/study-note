@@ -1,19 +1,20 @@
 package com.ljm.swagger.config;
 
+import io.swagger.models.auth.In;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.builders.RequestParameterBuilder;
 import springfox.documentation.oas.annotations.EnableOpenApi;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.service.ListVendorExtension;
-import springfox.documentation.service.VendorExtension;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -55,6 +56,20 @@ public class SwaggerConfig {
 
     @Bean
     public Docket docketOrder() {
+
+        RequestParameter parameter = new RequestParameterBuilder()
+                //参数名称
+                .name("token")
+                //描述
+                .description("authorize with token")
+                //放在header中
+                .in(ParameterType.HEADER)
+                //是否必传
+                .required(true)
+                .build();
+        //构建一个请求参数集合
+        List<RequestParameter> parameters = Collections.singletonList(parameter);
+
         return new Docket(DocumentationType.OAS_30).apiInfo(apiInfo())
                 .groupName("order")
                 // 配置扫描的接口
@@ -78,11 +93,11 @@ public class SwaggerConfig {
                 //none() 任何请求都不扫描
                 //regex(final String pathRegex) 通过正则表达式扫描
                 //ant(final String antPattern) 通过ant()指定请求扫描
-                .paths(PathSelectors.ant("/order/**"))
+                .paths(PathSelectors.any())
                 .build()
-
-                // 设置是否启动Swagger，默认为true（不写即可），关闭后Swagger就不生效了
-                .enable(true)
+                .securitySchemes(securitySchemes())
+                .securityContexts(securityContexts())
+                //.globalRequestParameters(parameters)
                 ;
     }
 
@@ -98,6 +113,27 @@ public class SwaggerConfig {
                 .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0") // 许可链接
                 .extensions(new ArrayList<>()) // 拓展
                 .build();
+    }
+
+
+    /**
+     * 设置授权信息
+     */
+    private List<SecurityScheme> securitySchemes() {
+        ApiKey apiKey = new ApiKey("token", "token", In.HEADER.toValue());
+        return Collections.singletonList(apiKey);
+    }
+
+    /**
+     * 授权信息全局应用
+     */
+    private List<SecurityContext> securityContexts() {
+        return Collections.singletonList(
+                SecurityContext.builder()
+                        .securityReferences(Collections.singletonList(new SecurityReference("token", new AuthorizationScope[]{new AuthorizationScope("global", "")})))
+                        .build()
+        );
+
     }
 
 }

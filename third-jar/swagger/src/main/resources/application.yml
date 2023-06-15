@@ -1,0 +1,11 @@
+server:
+  port: 8092
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      location: files
+      file-size-threshold: 0B
+      max-file-size: 10MB
+      max-request-size: 10MB

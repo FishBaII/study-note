@@ -3,7 +3,9 @@ package com.ljm.swagger.controller;
 
 import com.ljm.swagger.entity.Order;
 import com.ljm.swagger.response.CommonResult;
+import com.ljm.swagger.security.UserLoginToken;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ public class OrderController {
 
     @DeleteMapping("{id}")
     @ApiOperation("delete order")
+    @ApiImplicitParam(name = "token", value = "token in header", paramType = "header")
     public CommonResult delete(@PathVariable @ApiParam("order id") Long id){
 
         logger.info(id.toString());
@@ -54,6 +57,7 @@ public class OrderController {
 
     @GetMapping
     @ApiOperation("find order")
+    @UserLoginToken
     public CommonResult getOrderList(){
 
         Order order = new Order();
