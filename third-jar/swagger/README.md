@@ -257,7 +257,19 @@ public Docket docketEmployee() {
 ![](./pic/fileMultipleUpload.png)
 
 ## swagger访问需要登陆权限的接口
-swagger可以设置授权信息来访问需要认证授权的API,有以下方法可以设置授权。
+swagger可以设置授权信息来访问需要认证授权的API,有以下方法可以设置授权。  
+
+需要提前放开swagger相关url权限  
+```
+        .antMatchers( "/doc.html",
+                        "/v3/**",//此请求不放开会导致 error api-docs无法正常显示  https://songzixian.com/javalog/905.html
+                        "/swagger-ui**",
+                        "/swagger-ui/**",//此请求不放开没有权限请求一直失败，处于轮询接口
+                        "/swagger-resources/**",//此请求不放开导致访问出现Unable to infer base url. This is common when using dynamic servlet registration or when the API is   https://blog.csdn.net/just_now_and_future/article/details/89343680
+                        "/webjars/**"
+                        ).permitAll()
+
+```
 
 ### 声明header参数
 可以在指定API接口上使用@ApiImplicitParam来声明header需要的参数，如token,就可以在swagger访问接口时手动传入需要的header参数
@@ -337,5 +349,187 @@ public class SwaggerConfig {
 ![](./pic/authorizeLogo.png)  
 ![](./pic/authorizeInfo.png)  
 ![](./pic/getAccess.png)  
+
+
+## SpringCloud集成Swagger3
+
+在SpringCloud项目中，子服务也可以像通常项目那样每个服务配置一个swagger文档入口，但通常SpringCloud项目以网关服务作为全局swagger入口。
+示例项目结构如下：
+user-service（提供服务接口）
+api-gateway（网关服务）
+
+1. user-service配置swagger
+>- 依赖引入及swaggerConfig类与上文一致，不做赘述。
+
+配置文件yml
+```
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER #springboot2.6.x如果不加该配置会报错
+```
+
+2. api-gateway配置全局swagger入口
+
+>- 依赖引入与上文一致  
+
+
+```
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.config.GatewayProperties;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.support.NameUtils;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+import springfox.documentation.swagger.web.SwaggerResource;
+import springfox.documentation.swagger.web.SwaggerResourcesProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+@Primary
+public class SwaggerProvider implements SwaggerResourcesProvider {
+    public static final String API_URI = "/v2/api-docs";
+
+    @Autowired
+    private RouteLocator routeLocator;
+    @Autowired
+    private GatewayProperties gatewayProperties;
+
+    /**
+     * 这个类是核心，这个类封装的是SwaggerResource，即在swagger-ui.html页面中顶部的选择框，选择服务的swagger页面内容。
+     * RouteLocator：获取spring cloud gateway中注册的路由
+     * RouteDefinitionLocator：获取spring cloud gateway路由的详细信息
+     * RestTemplate：获取各个配置有swagger的服务的swagger-resources
+     */
+    @Override
+    public List<SwaggerResource> get() {
+        List<SwaggerResource> resources = new ArrayList<>();
+        List<String> routes = new ArrayList<>();
+        //取出gateway的route
+        routeLocator.getRoutes().subscribe(route -> routes.add(route.getId()));
+        //结合配置的route-路径(Path)，和route过滤，只获取有效的route节点
+        gatewayProperties.getRoutes().stream().filter(routeDefinition -> routes.contains(routeDefinition.getId()))
+                .forEach(routeDefinition -> routeDefinition.getPredicates().stream()
+                        .filter(predicateDefinition -> ("Path").equalsIgnoreCase(predicateDefinition.getName()))
+                        .forEach(predicateDefinition -> resources.add(swaggerResource(routeDefinition.getId(),
+                                predicateDefinition.getArgs().get(NameUtils.GENERATED_NAME_PREFIX + "0")
+                                        .replace("/**", API_URI)))));
+        return resources;
+    }
+
+    private SwaggerResource swaggerResource(String name, String location) {
+        SwaggerResource swaggerResource = new SwaggerResource();
+        swaggerResource.setName(name);
+        swaggerResource.setLocation(location);
+        swaggerResource.setSwaggerVersion("3.0.0");
+        return swaggerResource;
+    }
+}
+```
+
+```
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
+import springfox.documentation.swagger.web.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/swagger-resources")
+public class SwaggerHandler {
+    @Autowired(required = false)
+    private SecurityConfiguration securityConfiguration;
+    @Autowired(required = false)
+    private UiConfiguration uiConfiguration;
+    private final SwaggerResourcesProvider swaggerResources;
+
+    @Autowired
+    public SwaggerHandler(SwaggerResourcesProvider swaggerResources) {
+        this.swaggerResources = swaggerResources;
+    }
+
+
+    @GetMapping("/configuration/security")
+    public Mono<ResponseEntity<SecurityConfiguration>> securityConfiguration() {
+        return Mono.just(new ResponseEntity<>(
+                Optional.ofNullable(securityConfiguration).orElse(SecurityConfigurationBuilder.builder().build()), HttpStatus.OK));
+    }
+
+    @GetMapping("/configuration/ui")
+    public Mono<ResponseEntity<UiConfiguration>> uiConfiguration() {
+        return Mono.just(new ResponseEntity<>(
+                Optional.ofNullable(uiConfiguration).orElse(UiConfigurationBuilder.builder().build()), HttpStatus.OK));
+    }
+
+    @GetMapping("")
+    public Mono<ResponseEntity> swaggerResources() {
+        return Mono.just((new ResponseEntity<>(swaggerResources.get(), HttpStatus.OK)));
+    }
+}
+```
+
+```
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ServerWebExchange;
+
+
+@Component
+public class SwaggerHeaderFilter extends AbstractGatewayFilterFactory {
+    private static final String HEADER_NAME = "X-Forwarded-Prefix";
+
+    @Override
+    public GatewayFilter apply(Object config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+            String path = request.getURI().getPath();
+            if (!StringUtils.endsWithIgnoreCase(path, SwaggerProvider.API_URI)) {
+                return chain.filter(exchange);
+            }
+            String basePath = path.substring(0, path.lastIndexOf(SwaggerProvider.API_URI));
+            ServerHttpRequest newRequest = request.mutate().header(HEADER_NAME, basePath).build();
+            ServerWebExchange newExchange = exchange.mutate().request(newRequest).build();
+            return chain.filter(newExchange);
+        };
+    }
+}
+```
+
+yml配置路由规则
+```
+server:
+  port: 9201
+service-url:
+  user-service: http://localhost:8201
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service #路由的ID
+          uri: http://localhost:8201/user-service/** #匹配后路由地址
+          predicates: # 断言，路径相匹配的进行路由
+            - Path=/user-service/**
+          filters:
+            - StripPrefix=1
+```
+
+3. 访问swagger文档
+
+访问http://localhost:9201/swagger-ui/index.html#/
+![](./pic/cloudView.png)
+
+可以点击右上角下拉框切换不同服务的swagger
+![](./pic/cloudSelect.png)
+
 
 
