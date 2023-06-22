@@ -2,6 +2,7 @@ package com.ljm.swagger.controller;
 
 
 import com.ljm.swagger.entity.Order;
+import com.ljm.swagger.entity.OrderType;
 import com.ljm.swagger.response.CommonResult;
 import com.ljm.swagger.security.UserLoginToken;
 import io.swagger.annotations.Api;
@@ -67,5 +68,17 @@ public class OrderController {
         list.add(order);
         return CommonResult.success(list);
 
+    }
+
+    @GetMapping("/type")
+    @ApiOperation("find order by type")
+    public CommonResult getOrderListByType(OrderType type){
+        Order order = new Order();
+        order.setId(1L);
+        order.setOrderType(type);
+        order.setAccountNumber("P-0234345345");
+        List<Order> list = new ArrayList<>();
+        list.add(order);
+        return CommonResult.success(list);
     }
 }

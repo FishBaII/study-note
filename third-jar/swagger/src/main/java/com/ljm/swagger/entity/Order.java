@@ -15,6 +15,9 @@ public class Order {
     @ApiModelProperty(value = "order number")
     private String accountNumber;
 
+    @ApiModelProperty(value = "order type")
+    private OrderType orderType;
+
     @ApiModelProperty(value = "order amount")
     private BigDecimal amount;
 
@@ -27,7 +30,7 @@ public class Order {
     @ApiModelProperty(hidden = true)
     private String version;
 
-    @ApiModelProperty(value = "used currency")
+    @ApiModelProperty(value = "used currency", allowableValues = "HKD, SGD")
     private String currency;
 
     public Long getId() {
@@ -84,6 +87,14 @@ public class Order {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+
+    public OrderType getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(OrderType orderType) {
+        this.orderType = orderType;
     }
 
     @Override
