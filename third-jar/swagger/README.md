@@ -525,10 +525,10 @@ spring:
 
 3. 访问swagger文档
 
-访问http://localhost:9201/swagger-ui/index.html#/
+访问http://localhost:9201/swagger-ui/index.html#/  
 ![](./pic/cloudView.png)
 
-可以点击右上角下拉框切换不同服务的swagger
+可以点击右上角下拉框切换不同服务的swagger  
 ![](./pic/cloudSelect.png)
 
 

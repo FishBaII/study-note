@@ -1,10 +1,19 @@
 package com.ljm.swagger.response;
 
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
+@ApiModel("entity for response")
 public class CommonResult<T> {
+
+    @ApiModelProperty(value = "code for response", example = "200")
     private long code;
+
+    @ApiModelProperty(value = "message for response", example = "操作成功")
     private String message;
+
+    @ApiModelProperty(value = "data for response")
     private T data;
 
 
