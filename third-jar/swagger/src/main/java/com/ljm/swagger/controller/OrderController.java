@@ -6,8 +6,12 @@ import com.ljm.swagger.entity.OrderType;
 import com.ljm.swagger.response.CommonResult;
 import com.ljm.swagger.security.UserLoginToken;
 import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -26,6 +30,15 @@ public class OrderController {
 
     @PutMapping
     @ApiOperation("create order")
+    @UserLoginToken
+    @ApiResponses(value = {
+            @ApiResponse(code = 401, message = "token is invalid", examples =
+            @Example(value = {
+                    @ExampleProperty(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE, value = "{\n\"code\": 401 \n\"message\": \"token is invalid!\"\n}")
+            }))
+    })
+
     public CommonResult add(@RequestBody Order order){
 
         logger.info(order.toString());
