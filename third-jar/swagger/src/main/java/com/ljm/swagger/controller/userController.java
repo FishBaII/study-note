@@ -23,6 +23,8 @@ public class userController {
     @ApiOperation("uesr login")
     public CommonResult login(@RequestBody SystemUser user) throws Exception {
 
+        //admin
+        //123456
         logger.info(user.toString());
 
         String token = TokenUtil.createToken(user);

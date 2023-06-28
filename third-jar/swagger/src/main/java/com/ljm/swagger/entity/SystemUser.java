@@ -1,11 +1,16 @@
 package com.ljm.swagger.entity;
 
+import io.swagger.annotations.ApiModelProperty;
+
 public class SystemUser {
 
+    @ApiModelProperty(example = "1")
     private Long id;
 
+    @ApiModelProperty(example = "admin")
     private String userName;
 
+    @ApiModelProperty(example = "12345")
     private String password;
 
     public Long getId() {

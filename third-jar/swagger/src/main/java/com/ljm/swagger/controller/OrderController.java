@@ -5,16 +5,15 @@ import com.ljm.swagger.entity.Order;
 import com.ljm.swagger.entity.OrderType;
 import com.ljm.swagger.response.CommonResult;
 import com.ljm.swagger.security.UserLoginToken;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -37,6 +36,7 @@ public class OrderController {
 
     @DeleteMapping("{id}")
     @ApiOperation("delete order")
+    @UserLoginToken
     @ApiImplicitParam(name = "token", value = "token in header", paramType = "header")
     public CommonResult delete(@PathVariable @ApiParam("order id") Long id){
 
@@ -80,5 +80,18 @@ public class OrderController {
         List<Order> list = new ArrayList<>();
         list.add(order);
         return CommonResult.success(list);
+    }
+
+
+    @GetMapping("/list")
+    @ApiOperation("select by map")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "id", value = "id", paramType = "query", dataType="Long"),
+            @ApiImplicitParam(name = "currency", value = "币种", paramType = "query", dataType="String", allowableValues = "USD,SGD"),
+            @ApiImplicitParam(name = "accountNumber", value = "账号", paramType = "query", dataType="String", example = "P-000001")
+    })
+    public CommonResult getByMap(@ApiIgnore @RequestParam Map<String, Object> params){
+        logger.info(params.toString());
+        return CommonResult.success(null);
     }
 }

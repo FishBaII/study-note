@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @ApiModel("entity for order")
 public class Order {
 
-    @ApiModelProperty(value = "order id", position = 0)
+    @ApiModelProperty(value = "order id", example = "1")
     private Long id;
 
     @ApiModelProperty(value = "order number")
