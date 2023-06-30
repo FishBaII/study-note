@@ -26,7 +26,7 @@ public class OrderController {
 
     @PutMapping
     @ApiOperation("create order")
-    public CommonResult add(@RequestBody Order order){
+    public CommonResult add(Order order){
 
         logger.info(order.toString());
 
