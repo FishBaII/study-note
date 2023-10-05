@@ -141,6 +141,35 @@ machine*:hello
 @timestamp < now-2w
 ```
 
+### 嵌套查询
+
+示例文档
+```
+{
+  "user": [
+    {
+      "names": [
+        {
+          "first": "John",
+          "last": "Smith"
+        },
+        {
+          "first": "Alice",
+          "last": "White"
+        }
+      ]
+    }
+  ]
+}
+```
+
+若要查找数组中单个值包含名字“Alice”和姓氏“White”的文档，请使用以下命令
+
+```
+user.names:{ first: "Alice" and last: "White" }
+```
+
+
 ### 转义字符
 
 ```
