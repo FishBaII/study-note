@@ -5,7 +5,11 @@
 
 ```shell
 docker pull jenkins/jenkins:2.414.3-lts
-docker run -d -p 10240:8080 -p 10241:50000 -v /home/docker/jenkins/data:/var/jenkins_home --name jenkins01 jenkins/jenkins:2.414.3-lts
+docker run -d -p 10240:8080 -p 10241:50000 \
+-v /home/docker/jenkins/data:/var/jenkins_home \
+--memory=2g \
+--name jenkins01 --privileged=true \
+jenkins/jenkins:2.414.3-lts
 ```
 >- 这里将目标服务器的/home/docker/jenkins/data（需提前授予文件夹读写权限）目录映射为jenkins容器jenkins_home目录
 
@@ -84,3 +88,47 @@ vi hudson.model.UpdateCenter.xml
 * git parameter
 * publish over ssh
 >- 如提示下载失败，则应更新下载源为国内最新镜像
+
+2. 配置jdk和maven环境
+
+* 将jdk和maven安装在jenkins的共享目录（例：/home/docker/jenkins/data）
+
+  ![](./img/jenkins_data_ls.png)
+
+* 全局配置中声明jdk和maven路径,路径必须为容器路径
+
+  ![](./img/jenkins_config_jdk.png)
+  ![](./img/jenkins_config_maven.png)
+
+* 系统配置中配置目标服务器的连接信息(生产环境使用ssh key连接)
+
+  ![](./img/jenkins_config_ssh.png)
+>- Remote Directory需提前创建，配置完可以先使用test Configuration测试连接性
+
+## jenkins创建job
+
+1. 准备一个普通的SpringBoot-maven项目，上传到git，用于jenkins job  
+   https://github.com/FishBaII/jenkins-starter.git
+
+
+2. 创建job 
+
+  ![](./img/jenkins_job_create1.png) 
+  ![](./img/jenkins_job_create2.png) 
+  
+3. 配置git, 需提前添加git访问凭证，其中凭证可以是账户密码，也可以是ssh私钥
+
+  ![](./img/jenkins_job_git.png)
+
+4. 保存后启动job, 查看控制台日志输出
+
+  ![](./img/jenkins_job_run1.png)
+  ![](./img/jenkins_job_run2.png)
+  
+5. 容器中，可于上一步日志输出的workspace路径查看被jenkins检出的git项目
+
+  ![](./img/jenkins_job_run3.png)
+
+
+
+  
