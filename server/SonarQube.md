@@ -61,6 +61,17 @@ docker-compose up -d
 
 ## SonarQube使用
 
+### 插件下载及token生产
+1. 可以前往Administration的插件市场下载自己想要的插件
+
+![](./img/sonar_plugin.png)
+
+>- 初次下载需要点击同意风险须知才能继续下载，如图可搜索Chinese Pack下载中文语言插件。
+
+2. 点击左上角进入我的账户选择security创建token供之后访问
+
+![](./img/sonar_token.png)
+
 ### maven
 
 
@@ -180,6 +191,17 @@ mvn clean verify sonar:sonar -Dsonar.token=myAuthenticationToken
 ```
 
 3. SonarQube查看结果
+
+![](./img/sonar_starter1.png)
+
+从左至右依次代表：可用性质量问题，安全漏洞，需安全检查问题，可维护性问题，测试代码覆盖率，代码重复率
+
+![](./img/sonar_starter2.png)
+
+点击进入详情可浏览更多信息，其中New Code代表新添加的代码质量一览，Overall Code代表整体质量一览 
+每个代码质量子项都有其阈值（以A到E分级），如果其中一个没达标，项目就会被标记为红色Failed
+
+
 
 >- 多模块maven项目及gradle项目可参考SonarQube官方Demo，[https://github.com/SonarSource/sonar-scanning-examples/tree/master](https://github.com/SonarSource/sonar-scanning-examples/tree/master)
 
