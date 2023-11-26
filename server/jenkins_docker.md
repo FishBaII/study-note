@@ -7,7 +7,6 @@
 docker pull jenkins/jenkins:2.414.3-lts
 docker run -d -p 10240:8080 -p 10241:50000 \
 -v /home/docker/jenkins/data:/var/jenkins_home \
---memory=2g \
 --name jenkins01 --privileged=true \
 jenkins/jenkins:2.414.3-lts
 ```
