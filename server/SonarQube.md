@@ -1,5 +1,12 @@
 
-## 安装
+## 介绍
+
+SonarQube provides the capability to not only show the health of an application but also to highlight issues newly introduced. 
+With a Quality Gate in place, you can achieve Clean Code and therefore improve code quality systematically.
+
+[点击进入官网](https://www.sonarsource.com/products/sonarqube/)
+
+## 安装及使用
 
 ### Docker安装
 
@@ -57,6 +64,45 @@ docker-compose up -d
 
 >- 如果日志提示max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]错误
 >- 执行vi /etc/sysctl.conf，添加vm.max_map_count=262144，再执行sysctl -p启用配置即可
+
+### 手动下载解压安装
+
+1. 环境准备：JDK17（sonarQube 10.0以上仅支持JDK17以上），postgresql（sonarQube 10.0以上仅支持postgresql）
+
+1. 官网下载对应安装包（工作环境建议下载LST版本），[点击下载](https://www.sonarsource.com/products/sonarqube/downloads/)
+
+2. 于目标服务器解压，并修改配置文件 *./config/sonar.properties*
+
+```properties
+## sonar连接的数据库账号
+sonar.jdbc.username=root
+## sonar连接的数据库密码
+sonar.jdbc.password=xxx
+## sonar 连接的数据库驱动信息 (需要提前创建连接的数据库)
+sonar.jdbc.url=jdbc:postgresql://postgres01:5432/sonar
+## sonar.jdbc.url=jdbc:mysql://10.12.22.21:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+sonar.web.host=0.0.0.0
+## sonar的网页 端口号
+sonar.web.port=9000
+
+```
+>- 仅旧版本SonarQube支持Mysql数据库
+
+3. 进入./bin/linux-x86-64,启动或停止服务
+
+```
+## 启动
+./sonar.sh start  启动
+
+## 停止
+./sonar.sh stop  停止
+
+## 重启
+./sonar.sh restart 重启
+```
+
+4. 访问服务器IP+9000端口号（与配置文件port一致）进入SonarQube管理台，默认账户密码都是admin
+
 
 
 ## SonarQube使用
@@ -205,9 +251,36 @@ mvn clean verify sonar:sonar -Dsonar.token=myAuthenticationToken
 
 >- 多模块maven项目及gradle项目可参考SonarQube官方Demo，[https://github.com/SonarSource/sonar-scanning-examples/tree/master](https://github.com/SonarSource/sonar-scanning-examples/tree/master)
 
+### Sonar-Scanner CLI
+
+参考[官网](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/)或其他教程。
 
 ### Sonar-Scanner in Jenkins
 
 
+#### 环境准备
+
+1. Jenkins插件管理下载Sonar Scanner插件
+
+2. Jenkins系统管理->全局设置->SonarQube Servers，输入SonarQube服务的访问地址和登陆Token
+
+3. Jenkins系统管理->全局工具配置–>SonarScanner，配置SonarScanner信息（如jenkins服务器未安装可选择自动安装）
+
+
+#### Job配置SonarQube扫描
+
+1. job配置中，添加构建步骤->Execute Sonar Scanner，JDK选择Scanner依赖的jdk（Scanner 10.0以上依赖JDK17），Analysis properties配置sonar所需属性
+
+```
+sonar.projectname=${JOB_NAME}
+sonar.projectname=${JOB_NAME}
+sonar.source=./
+sonar.java.binaries=target
+```
+
+#### Job启动
+
+1. 查看Job日志
+2. 查看SonarQube项目
 
 

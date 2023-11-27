@@ -106,6 +106,7 @@ vi hudson.model.UpdateCenter.xml
 
 ## jenkins创建job
 
+### 创建和启动job
 1. 准备一个普通的SpringBoot-maven项目，上传到git，用于jenkins job  
    https://github.com/FishBaII/jenkins-starter.git
 
@@ -129,5 +130,62 @@ vi hudson.model.UpdateCenter.xml
   ![](./img/jenkins_job_run3.png)
 
 
+### 使用maven构建项目
+
+1. 在上一步基础上，进入job设置，**Build**->**Invoke top-level Maven targets**
+
+
+2. 选择之前配置的maven环境，输入需要maven执行的命令（如clean package -DskipTests），保存
+
+
+3. 执行job，查看日志有执行我们自定义的maven命令日志，maven依赖下载日志等，以及workspace中项目target目录有打包完成的jar等
+
+### 部署到服务器
+
+1. 在上一步基础上，进入job设置，**Post-build Actions**->**Send build artifacts over SSH**
+
+
+2. **Name**选择之前配置的目标服务器，Source files选择workspace的目标文件(target/*.jar)，Exec command输入部署后执行的命令，保存
+
+3. 执行job，查看日志有使用SSH连接目标服务器的日志，部署后执行的命令日志等，可于目标服务器查看jar部署情况及服务启动情况
 
   
+### 部署到docker
+
+1. 在源项目处添加Dockerfile和docker-compose.yml
+
+```
+FROM daocloud.io/library/java:8u40-jdk
+copy starter-0.0.1-SNAPSHOT.jar /usr/local/
+WORKDIR /usr/local
+CMD java -jar starter-0.0.1-SNAPSHOT.jar
+```
+
+```yml
+version: '3.1'
+services: 
+  starter:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: starter:v0.0.1
+    container_name: spring-starter
+    ports:
+      - 9090:9090
+
+```
+
+2. 进入job设置，**Post-build Actions**->**Send build artifacts over SSH**
+
+3. **Name**选择之前配置的目标服务器，Source files选择workspace的目标文件(target/*.jar docker/*)，Exec command输入部署后执行的命令，保存
+
+```
+cd /usr/local/docker/app
+mv ../target//*jar ./
+docker-compose down
+docker-compose up -d --build
+//删除为none镜像
+docker image prune -f
+```
+
+4. 执行job，查看job执行状态，进入目标docker服务器， docker ps查看容器是否成功启动
