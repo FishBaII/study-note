@@ -260,22 +260,30 @@ mvn clean verify sonar:sonar -Dsonar.token=myAuthenticationToken
 
 #### 环境准备
 
-1. Jenkins插件管理下载Sonar Scanner插件
+1. Jenkins插件管理下载**SonarQube Scanner for Jenkins**插件
+
 
 2. Jenkins系统管理->全局设置->SonarQube Servers，输入SonarQube服务的访问地址和登陆Token
 
+![](./img/jenkins_sonar_form1.jpg)
+![](./img/jenkins_sonar_form2.png)
+
 3. Jenkins系统管理->全局工具配置–>SonarScanner，配置SonarScanner信息（如jenkins服务器未安装可选择自动安装）
 
+![](./img/jenkins_sonar_form3.png)
 
 #### Job配置SonarQube扫描
 
 1. job配置中，添加构建步骤->Execute Sonar Scanner，JDK选择Scanner依赖的jdk（Scanner 10.0以上依赖JDK17），Analysis properties配置sonar所需属性
 
 ```
-sonar.projectname=${JOB_NAME}
-sonar.projectname=${JOB_NAME}
+sonar.projectName=${JOB_NAME}
+sonar.projectKey=${JOB_NAME}
 sonar.source=./
-sonar.java.binaries=target
+sonar.sources=$WORKSPACE
+sonar.java.binaries=$WORKSPACE
+sonar.junit.reportPath=target/surefire-reports
+sonar.java.coveragePlugin=jacoco
 ```
 
 #### Job启动

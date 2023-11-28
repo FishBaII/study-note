@@ -120,6 +120,8 @@ vi hudson.model.UpdateCenter.xml
 
   ![](./img/jenkins_job_git.png)
 
+>- 可进入jenkins容器内命令生产ssh密钥对，ssh-keygen -t rsa -C "root"
+
 4. 保存后启动job, 查看控制台日志输出
 
   ![](./img/jenkins_job_run1.png)
