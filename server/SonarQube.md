@@ -217,6 +217,7 @@ sonar.web.port=9000
                             </execution>
                             <execution>
                                 <id>report</id>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
@@ -285,10 +286,15 @@ sonar.java.binaries=$WORKSPACE
 sonar.junit.reportPath=target/surefire-reports
 sonar.java.coveragePlugin=jacoco
 ```
+![](./img/jenkins_sonar_properties.png)
+
 
 #### Job启动
 
 1. 查看Job日志
+
+![](./img/jenkins_sonar_log.png)
+
 2. 查看SonarQube项目
 
-
+![](./img/jenkins_sonar_project.png)

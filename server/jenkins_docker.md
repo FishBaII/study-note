@@ -139,13 +139,16 @@ vi hudson.model.UpdateCenter.xml
 
 2. 选择之前配置的maven环境，输入需要maven执行的命令（如clean package -DskipTests），保存
 
+![](./img/jenkins_maven1.png)
+
 
 3. 执行job，查看日志有执行我们自定义的maven命令日志，maven依赖下载日志等，以及workspace中项目target目录有打包完成的jar等
+
+![](./img/jenkins_maven_log.png)
 
 ### 部署到服务器
 
 1. 在上一步基础上，进入job设置，**Post-build Actions**->**Send build artifacts over SSH**
-
 
 2. **Name**选择之前配置的目标服务器，Source files选择workspace的目标文件(target/*.jar)，Exec command输入部署后执行的命令，保存
 
