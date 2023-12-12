@@ -16,13 +16,15 @@
 * MyBatisPlus持久层框架 //todo
 
 ### java
-* [JDK9-11新特性](https://github.com/FishBaII/study-note/blob/main/java/newFeatures/JDK-Features.md)
+* [JDK9-11新特性](https://github.com/FishBaII/study-note/blob/main/java/newFeatures/JDK-Features9-11.md)
 * [JDK HttpClient](https://github.com/FishBaII/study-note/blob/main/java/HttpClientInJDK11.md)
 
 
 
 ### 服务
 * [Docker容器](https://github.com/FishBaII/study-note/blob/main/server/docker/docker.md)
+* [Jenkins](https://github.com/FishBaII/study-note/blob/main/server/jenkins_docker.md)
+* [SonarQube](https://github.com/FishBaII/study-note/blob/main/server/SonarQube.md)
 * [Seata分布式事务](https://github.com/FishBaII/study-note/blob/main/server/seata.md)
 * [RabbitMQ消息队列](https://github.com/FishBaII/study-note/blob/main/server/rabbitMQ.md)
 * [Canal数据库增量消费](https://github.com/FishBaII/study-note/blob/main/server/canal.md)
