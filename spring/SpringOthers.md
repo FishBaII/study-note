@@ -1,5 +1,7 @@
 ### ApplicationRunner  
-```
+
+* 启动类参数处理
+```java
 @SpringBootApplication
 public class ThirdApplication implements ApplicationRunner {
 
@@ -43,5 +45,56 @@ public class ThirdApplication implements ApplicationRunner {
         log.info("Get name list in main:" + testService.getNameListFromDB());
         System.exit(1);
     }
+}
+```
+
+* 根据bean id获取bean
+
+```java
+@Service
+public class AppService {
+
+    private final ApplicationContext applicationContext;
+
+    public AppService(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
+    public void outputAny(){
+        System.out.println("any!!!");
+        //获取id为enc_service的bean，其中id可通过注解声明，@Component("enc_service")
+        if(applicationContext.containsBean("enc_service")){
+            EncService encService = applicationContext.getBean("enc_service", EncService.class);
+            encService.enc();
+        }
+
+    }
+}
+```
+
+* 获取resource配置文件
+
+```
+//获取resources下的文件，开发及服务器环境适用
+Properties pro = new Properties();
+InputStream in = this.getClass().getResourceAsStream("/myConfig/mine.properties")
+pro.load(in);
+in.close();
+
+//直接通过静态方法获取配置文件的值filePath（对应配置中的jwt.filePath: xxx）
+@Component
+@ConfigurationProperties(prefix = "jwt)
+public class SysConfig{
+private static String filePath;
+private static String dbPassword;
+
+public void setFilePath(String filePath){
+    SysConfig.filePath = filePath;
+}
+
+public static String getFilePath(){
+    return filePath;
+}
+//...
 }
 ```

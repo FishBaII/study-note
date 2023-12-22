@@ -160,6 +160,7 @@ vi hudson.model.UpdateCenter.xml
 1. 在源项目处添加Dockerfile和docker-compose.yml
 
 ```
+//pull jdk镜像，也可从已有镜像获取
 FROM daocloud.io/library/java:8u40-jdk
 copy starter-0.0.1-SNAPSHOT.jar /usr/local/
 WORKDIR /usr/local
@@ -194,3 +195,28 @@ docker image prune -f
 ```
 
 4. 执行job，查看job执行状态，进入目标docker服务器， docker ps查看容器是否成功启动
+
+### job参数
+
+#### git参数
+
+在构建job时传递tag参数进行git tag的选择（需提前在git project创建多个tag）
+
+1. job配置添加git parameter
+
+![](./img/jenkins_param_git.png)
+
+2. job配置添加Execute shell进行tag切换
+
+```
+//$tag 为上一步自定义的parameter名称
+git checkout $tag
+```
+
+![](./img/jenkins_param_git2.png)
+
+3. 进入git构建界面，会自动搜索关联的git project所有tag作为参数
+
+![](./img/jenkins_param_git3.png)
+
+4. 构建job， 日志会打印git checkout $tag相关日志， workspace也能检出你选择的tag的代码
