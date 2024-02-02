@@ -152,13 +152,13 @@ void objectTypeTest(){
 
 添加JVM参数有以下方法
 
-1. idea运行配置
+1. idea运行配置  
 可于idea Run/Debug Configuration -> Add VM options 进行添加
 
-2. 启动命令添加
+2. 启动命令添加  
 如：java -jar xxx.jar --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED
 
-3. Maven配置
+3. Maven配置  
 
 ```
             <plugin>
@@ -174,5 +174,8 @@ void objectTypeTest(){
 ```
 
 
+## 引用参考
+
+[https://blog.gotofinal.com/java/diorite/breakingjava/2017/06/24/dynamic-enum.html](https://blog.gotofinal.com/java/diorite/breakingjava/2017/06/24/dynamic-enum.html)
 
 
