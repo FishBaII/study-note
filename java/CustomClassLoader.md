@@ -1,4 +1,6 @@
-```
+
+## 构建自定义类加载器
+```java
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -51,6 +53,16 @@ public class TestClassLoader extends URLClassLoader {
 
 ```
 
-```
+## 使用自定义类加载器加载类并获取指定field值
+
+```JAVA
+public Object getClassField(Class<?> loadClass, String fieldName){
+    try(URLClassLoader urlClassLoader = new TestClassLoader(getClass().getClassLoader(), loadClass)){
+        Class<?> aClass = urlClassLoader.loadClass(loadedClass.getName());
+        Field declaredField = aClass.getDeclaredField(fieldName);
+        declaredField.setAccessible(true);
+        return declaredField.get(null);
+    }
+}
 
 ```

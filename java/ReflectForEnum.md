@@ -80,8 +80,10 @@ void objectTypeTest(){
 ```
 
 
+## 解决办法
 
-## 使用unsafe类创建实例
+
+### 使用unsafe类创建实例
 
 ```
     @Test
@@ -104,21 +106,33 @@ void objectTypeTest(){
         valuesField.set(null, newValues);
 
         Field ordinalField = Enum.class.getDeclaredField("ordinal");
+        //赋予ordinalField修改权限
         makeAccessible(ordinalField);
+        //赋值枚举实例序号为3（0为起始值）
         ordinalField.setInt(enumValue, 3);
+        //如果有其他字段需要赋值，重复 赋予修改权限 和 赋值 这两步
+        //...
+        //执行util方法，会进入swtich的default方法
         Assertions.assertEquals("others", SwitchUtil.getType(enumValue));
 
     }
 ```
 
 
-## 更多的反射
+### 修改默认访问修饰符
+
+使用反射将final删除，使之可以被继承修改
 
 ```
-//添加jvm参数 -add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+
     public static void makeAccessible(Field field) throws Exception {
         field.setAccessible(true);
+        
+        //JDK11及以下写法
         //Field modifiersField = Field.class.getDeclaredField("modifiers");
+        
+        //JDK12引入了模块化，无法直接获取部分field，会提示No such XXXX异常，需要通过getDeclaredFields0获取，还需要添加如下JVM参数
+        //--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED
         Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
         getDeclaredFields0.setAccessible(true);
         Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
@@ -128,8 +142,37 @@ void objectTypeTest(){
                 modifiersField = each;
             }
         }
+        
+        //除去final限制
         modifiersField.setAccessible(true);
         modifiersField.setInt(field, field.getModifiers() & ~ Modifier.FINAL);
     }
 ```
+
+
+添加JVM参数有以下方法
+
+1. idea运行配置
+可于idea Run/Debug Configuration -> Add VM options 进行添加
+
+2. 启动命令添加
+如：java -jar xxx.jar --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+
+3. Maven配置
+
+```
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>
+                        --add-opens=java.base/java.lang=ALL-UNNAMED 
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+            </plugin>
+```
+
+
+
 
