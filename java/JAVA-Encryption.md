@@ -35,7 +35,7 @@ PGPainless 基于 Bouncy Castle java 库，可在 Android 上使用，最高可�
 
 项目环境
 
-| Tool       | Version |
+| Framework  | Version |
 |------------|---------|
 | JDK        | 11      |
 | SpringBoot | 2.7.12  |
@@ -425,4 +425,123 @@ public class PGPainlessDecryption {
 
 }
 ```
+---
+
+## Jasypt
+
+### 介绍
+Jasypt（Java Simplified Encryption）是一个专注于简化Java加密操作的工具。它提供了一种简单而强大的方式来处理数据的加密和解密，使开发者能够轻松地保护应用程序中的敏感信息，如数据库密码、API密钥等。
+
+Jasypt的设计理念是简化加密操作，使其对开发者更加友好。它采用密码学强度的加密算法，支持多种加密算法，从而平衡了性能和安全性。其中，Jasypt的核心思想之一是基于密码的加密（Password Based Encryption，PBE），通过用户提供的密码生成加密密钥，然后使用该密钥对数据进行加密和解密。
+
+该工具还引入了盐（Salt）的概念，通过添加随机生成的盐值，提高了加密的安全性，防止相同的原始数据在不同的加密过程中产生相同的结果，有效抵御彩虹表攻击。
+
+官网： [http://www.jasypt.org/](http://www.jasypt.org/)
+
+
+### 项目实战
+
+#### SpringBoot3.x
+
+项目环境
+
+| Framework  | Version |
+|------------|---------|
+| JDK        | 17      |
+| SpringBoot | 3.2.1   |
+| maven      | 3.6     |
+
+1. 引入Jasypt依赖, 如果是SpringBoot2.x版本请引入旧的jasypt2.x依赖
+
+```xml
+<dependency>
+  <groupId>com.github.ulisesbocchio</groupId>
+  <artifactId>jasypt-spring-boot</artifactId>
+  <version>3.0.5</version>
+</dependency>
+```
+
+2. 配置文件
+
+常用配置及默认值如下表
+
+| Key	                                       | Required	 | Default Value                       |
+|--------------------------------------------|-----------|-------------------------------------|
+| jasypt.encryptor.password	                 | True	     | -                                   |
+| jasypt.encryptor.algorithm	                | False	    | PBEWITHHMACSHA512ANDAES_256         |
+| jasypt.encryptor.key-obtention-iterations	 | False	    | 1000                                |
+| jasypt.encryptor.pool-size	                | False	    | 1                                   |
+| jasypt.encryptor.provider-name	            | False	    | SunJCE                              |
+| jasypt.encryptor.provider-class-name	      | False	    | null                                |
+| jasypt.encryptor.salt-generator-classname	 | False	    | org.jasypt.salt.RandomSaltGenerator |
+| jasypt.encryptor.iv-generator-classname	   | False	    | org.jasypt.iv.RandomIvGenerator     |
+| jasypt.encryptor.string-output-type	       | False	    | base64                              |
+| jasypt.encryptor.proxy-property-sources	   | False	    | false                               |
+| jasypt.encryptor.skip-property-sources	    | False	    | empty list                          |
+
+```yaml
+jasypt:
+  encryptor:
+    # jasypt密钥
+    password: thisIsKey
+    #声明加密算法，默认为PBEWITHHMACSHA512ANDAES_256
+    algorithm: PBEWithMD5AndDES
+
+# 自定义密文配置的前后缀，默认为ENC()
+#    property:
+#      prefix: ENC@[
+#      suffix: ]
+
+# 使用方法如下，项目启动时jasypt bean会自动创建并自动解密所有符合指定前后缀的密文，解密失败会启动失败（密文产生方法参考下一步）
+datasource:
+  password: ENC(r/ojbvIxrOVJGv8t3HKsnFJJB9EGZPUW3WU0Nru7lrI=)
+```
+> 注意， 生产环境jasypt密钥不能直接写死在配置文件中，必须通过其他安全途径获取，如启动命令设置配置变量**java -Djasypt.encryptor.password=thisIsKey ...**
+
+4. jasypt工具方法
+
+此方法用于测试jasypt加解密，使用后应删除，如果需要多次加解密，请将加密和解密过程独立为bean方法进行调用。
+```
+        StandardPBEStringEncryptor standardPBEStringEncryptor =new StandardPBEStringEncryptor();
+        /*配置文件中配置如下的算法*/
+        standardPBEStringEncryptor.setAlgorithm("PBEWithMD5AndDES");
+        /*配置文件中配置的password*/
+        standardPBEStringEncryptor.setPassword("thisIsKey");
+        /*配置文件中配置的IvGenerator，如果不填默认为NoIvGenerator，需要在配置文件声明jasypt.encryptor.iv-generator-classname值*/
+        standardPBEStringEncryptor.setIvGenerator(new RandomIvGenerator());
+        //加密
+        String jasyptPasswordEN =standardPBEStringEncryptor.encrypt("thisIsPassword");
+        //解密
+        String jasyptPasswordDE =standardPBEStringEncryptor.decrypt(jasyptPasswordEN);
+        System.out.println("加密后密码："+jasyptPasswordEN);
+        System.out.println("解密后密码："+jasyptPasswordDE);
+```
+
+5. 项目启动
+
+自动解密所有在配置文件中符合指定前后缀的密文，如数据库密码等，在项目启动时进行解密并用明文进行连接。
+
+```java
+@SpringBootTest
+public class JasyptBootTest {
+
+
+    @Autowired
+    private Environment environment;
+
+    @Test
+    void test(){
+
+        System.out.println(environment.getProperty("datasource.password"));
+        //自动解密，输出密码原文
+        //thisIsPassword
+    }
+}
+```
+
+
+
+
+
+
 

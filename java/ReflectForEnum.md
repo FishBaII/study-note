@@ -85,14 +85,15 @@ void objectTypeTest(){
 
 ### 使用unsafe类创建实例
 
-```
+```java
     @Test
     void test1() throws Exception {
 
-
+        //使用反射获取unsafe实例
         Constructor< ? > constructor = Unsafe.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
         Unsafe unsafe = (Unsafe) constructor.newInstance();
+        //绕过构造方法、初始化代码来非常规地创建对象
         ProductType enumValue = (ProductType) unsafe.allocateInstance(ProductType.class);
 
 
