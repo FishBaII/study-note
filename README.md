@@ -9,6 +9,7 @@
 * [GateWay](https://github.com/FishBaII/study-note/blob/main/spring/springcloud/Feign.md)
 
 ### 数据库
+* [ShardingSphere-JDBC](https://github.com/FishBaII/study-note/blob/main/dataBase/Sharding-JDBC.md)
 * [Redis](https://github.com/FishBaII/study-note/blob/main/redis/Redis.md)
 * [Redis分布式部署](https://github.com/FishBaII/study-note/blob/main/redis/Redis-Cluster.md)
 * [DynamicSource动态数据源](https://github.com/FishBaII/study-note/blob/main/dataBase/dynamicSource.md)
