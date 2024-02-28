@@ -11,11 +11,17 @@ Sharding-JDBC是ShardingSphere的第一个产品，也是ShardingSphere的前身
 
 核心功能如下：
 
-* 数据分片
-* 读写分离
-* 强制路由
-* 数据治理
-* 分布式事务
+| 特性    | 定义                                                                                                  |
+|-------|-----------------------------------------------------------------------------------------------------|
+| 数据分片  | 	数据分片，是应对海量数据存储与计算的有效手段。ShardingSphere 基于底层数据库提供分布式数据库解决方案，可以水平扩展计算和存储。                             |
+| 分布式事务 | 事务能力，是保障数据库完整、安全的关键技术，也是数据库的核心技术。基于 XA 和 BASE 的混合事务引擎，ShardingSphere 提供在独立数据库上的分布式事务功能，保证跨数据源的数据安全。 |
+| 读写分离  | 读写分离，是应对高压力业务访问的手段。基于对 SQL 语义理解及对底层数据库拓扑感知能力，ShardingSphere 提供灵活的读写流量拆分和读流量负载均衡。                    |
+| 数据迁移  | 数据迁移，是打通数据生态的关键能力。ShardingSphere 提供跨数据源的数据迁移能力，并可支持重分片扩展。                                           |
+| 联邦查询  | 	联邦查询，是面对复杂数据环境下利用数据的有效手段。ShardingSphere 提供跨数据源的复杂查询分析能力，实现跨源的数据关联与聚合。                              |
+| 数据加密  | 数据加密，是保证数据安全的基本手段。ShardingSphere 提供完整、透明、安全、低成本的数据加密解决方案。                                           |
+| 影子库   | 在全链路压测场景下，ShardingSphere 支持不同工作负载下的数据隔离，避免测试数据污染生产环境。                                               |
+
+
 
 --- 
 ### 数据分片
@@ -101,11 +107,12 @@ XA协议最早的分布式事务模型是由X/Open国际联盟提出的X/Open Di
 
 ### 开发环境与依赖引入
 
-| Framework  | Version |
-|------------|---------|
-| JDK        | 17      |
-| SpringBoot | 3.0.0   |
-| maven      | 3.6     |
+| Framework      | Version |
+|----------------|---------|
+| JDK            | 17      |
+| SpringBoot     | 3.0.0   |
+| MySQL          | 8.0     |
+| ShardingSphere | 5.4.1   |
 
 **shardingsphere-JDBC版本选择**
 
@@ -178,100 +185,317 @@ _shardingsphere-JDBC V5.4.1_, 这是当前最新版本，仅支持yaml配置(与
 
 
 
-配置信息
+配置规则
 
-```properties
-sharding.jdbc.datasource.names=ds0,ds1
+```YAML
+rules:
+  - !SHARDING
+    tables: # 数据分片规则配置
+      <logic_table_name> (+): # 逻辑表名称
+        actualDataNodes (?): # 由数据源名 + 表名组成（参考 Inline 语法规则）
+        databaseStrategy (?): # 分库策略，缺省表示使用默认分库策略，以下的分片策略只能选其一
+          standard: # 用于单分片键的标准分片场景
+            shardingColumn: # 分片列名称
+            shardingAlgorithmName: # 分片算法名称
+          complex: # 用于多分片键的复合分片场景
+            shardingColumns: # 分片列名称，多个列以逗号分隔
+            shardingAlgorithmName: # 分片算法名称
+          hint: # Hint 分片策略
+            shardingAlgorithmName: # 分片算法名称
+          none: # 不分片
+        tableStrategy: # 分表策略，同分库策略
+        keyGenerateStrategy: # 分布式序列策略
+          column: # 自增列名称，缺省表示不使用自增主键生成器
+          keyGeneratorName: # 分布式序列算法名称
+        auditStrategy: # 分片审计策略
+          auditorNames: # 分片审计算法名称
+            - <auditor_name>
+            - <auditor_name>
+          allowHintDisable: true # 是否禁用分片审计hint
+    autoTables: # 自动分片表规则配置
+      t_order_auto: # 逻辑表名称
+        actualDataSources (?): # 数据源名称
+        shardingStrategy: # 切分策略
+          standard: # 用于单分片键的标准分片场景
+            shardingColumn: # 分片列名称
+            shardingAlgorithmName: # 自动分片算法名称
+    bindingTables (+): # 绑定表规则列表
+      - <logic_table_name_1, logic_table_name_2, ...>
+      - <logic_table_name_1, logic_table_name_2, ...>
+    defaultDatabaseStrategy: # 默认数据库分片策略
+    defaultTableStrategy: # 默认表分片策略
+    defaultKeyGenerateStrategy: # 默认的分布式序列策略
+    defaultShardingColumn: # 默认分片列名称
 
-sharding.jdbc.datasource.ds0.type=org.apache.commons.dbcp2.BasicDataSource
-sharding.jdbc.datasource.ds0.driver-class-name=com.mysql.jdbc.Driver
-sharding.jdbc.datasource.ds0.url=jdbc:mysql://localhost:3306/ds0
-sharding.jdbc.datasource.ds0.username=root
-sharding.jdbc.datasource.ds0.password=
+    # 分片算法配置
+    shardingAlgorithms:
+      <sharding_algorithm_name> (+): # 分片算法名称
+        type: # 分片算法类型
+        props: # 分片算法属性配置
+        # ...
 
-sharding.jdbc.datasource.ds1.type=org.apache.commons.dbcp2.BasicDataSource
-sharding.jdbc.datasource.ds1.driver-class-name=com.mysql.jdbc.Driver
-sharding.jdbc.datasource.ds1.url=jdbc:mysql://localhost:3306/ds1
-sharding.jdbc.datasource.ds1.username=root
-sharding.jdbc.datasource.ds1.password=
+    # 分布式序列算法配置
+    keyGenerators:
+      <key_generate_algorithm_name> (+): # 分布式序列算法名称
+        type: # 分布式序列算法类型
+        props: # 分布式序列算法属性配置
+        # ...
+    # 分片审计算法配置
+    auditors:
+      <sharding_audit_algorithm_name> (+): # 分片审计算法名称
+        type: # 分片审计算法类型
+        props: # 分片审计算法属性配置
+        # ...
 
-sharding.jdbc.config.sharding.default-database-strategy.inline.sharding-column=user_id
-sharding.jdbc.config.sharding.default-database-strategy.inline.algorithm-expression=ds$->{user_id % 2}
+  - !BROADCAST
+    tables: # 广播表规则列表
+      - <table_name>
+      - <table_name>
 
-sharding.jdbc.config.sharding.tables.t_order.actual-data-nodes=ds$->{0..1}.t_order$->{0..1}
-sharding.jdbc.config.sharding.tables.t_order.table-strategy.inline.sharding-column=order_id
-sharding.jdbc.config.sharding.tables.t_order.table-strategy.inline.algorithm-expression=t_order$->{order_id % 2}
 
-sharding.jdbc.config.sharding.tables.t_order_item.actual-data-nodes=ds$->{0..1}.t_order_item$->{0..1}
-sharding.jdbc.config.sharding.tables.t_order_item.table-strategy.inline.sharding-column=order_id
-sharding.jdbc.config.sharding.tables.t_order_item.table-strategy.inline.algorithm-expression=t_order_item$->{order_id % 2}
 ```
 
-```properties
-sharding.jdbc.datasource.names= #数据源名称，多数据源以逗号分隔
+> 广播表：指所有的数据源中都存在的表，表结构及其数据在每个数据库中均完全一致。 适用于数据量不大且需要与海量数据的表进行关联查询的场景，例如：字典表。
+> 单表 //todo
 
-sharding.jdbc.datasource.<data-source-name>.type= #数据库连接池类名称
-sharding.jdbc.datasource.<data-source-name>.driver-class-name= #数据库驱动类名
-sharding.jdbc.datasource.<data-source-name>.url= #数据库url连接
-sharding.jdbc.datasource.<data-source-name>.username= #数据库用户名
-sharding.jdbc.datasource.<data-source-name>.password= #数据库密码
-sharding.jdbc.datasource.<data-source-name>.xxx= #数据库连接池的其它属性
+### 读写分离
 
-sharding.jdbc.config.sharding.tables.<logic-table-name>.actual-data-nodes= #由数据源名 + 表名组成，以小数点分隔。多个表以逗号分隔，支持inline表达式。缺省表示使用已知数据源与逻辑表名称生成数据节点。用于广播表（即每个库中都需要一个同样的表用于关联查询，多为字典表）或只分库不分表且所有库的表结构完全一致的情况
 
-#分库策略，缺省表示使用默认分库策略，以下的分片策略只能选其一
+```yaml
+rules:
+- !READWRITE_SPLITTING
+  dataSources:
+    <data_source_name> (+): # 读写分离逻辑数据源名称，默认使用 Groovy 的行表达式 SPI 实现来解析
+       write_data_source_name: # 写库数据源名称，默认使用 Groovy 的行表达式 SPI 实现来解析
+       read_data_source_names: # 读库数据源名称，多个从数据源用逗号分隔，默认使用 Groovy 的行表达式 SPI 实现来解析
+       transactionalReadQueryStrategy (?): # 事务内读请求的路由策略，可选值：PRIMARY（路由至主库）、FIXED（同一事务内路由至固定数据源）、DYNAMIC（同一事务内路由至非固定数据源）。默认值：DYNAMIC
+       loadBalancerName: # 负载均衡算法名称
+  
+  # 负载均衡算法配置
+  loadBalancers:
+    <load_balancer_name> (+): # 负载均衡算法名称
+      type: # 负载均衡算法类型
+      props: # 负载均衡算法属性配置
+        # ...
 
-#用于单分片键的标准分片场景
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.standard.sharding-column= #分片列名称
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.standard.precise-algorithm-class-name= #精确分片算法类名称，用于=和IN。该类需实现PreciseShardingAlgorithm接口并提供无参数的构造器
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.standard.range-algorithm-class-name= #范围分片算法类名称，用于BETWEEN，可选。该类需实现RangeShardingAlgorithm接口并提供无参数的构造器
-
-#用于多分片键的复合分片场景
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.complex.sharding-columns= #分片列名称，多个列以逗号分隔
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.complex.algorithm-class-name= #复合分片算法类名称。该类需实现ComplexKeysShardingAlgorithm接口并提供无参数的构造器
-
-#行表达式分片策略
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.inline.sharding-column= #分片列名称
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.inline.algorithm-expression= #分片算法行表达式，需符合groovy语法
-
-#Hint分片策略
-sharding.jdbc.config.sharding.tables.<logic-table-name>.database-strategy.hint.algorithm-class-name= #Hint分片算法类名称。该类需实现HintShardingAlgorithm接口并提供无参数的构造器
-
-#分表策略，同分库策略
-sharding.jdbc.config.sharding.tables.<logic-table-name>.table-strategy.xxx= #省略
-
-sharding.jdbc.config.sharding.tables.<logic-table-name>.key-generator-column-name= #自增列名称，缺省表示不使用自增主键生成器
-sharding.jdbc.config.sharding.tables.<logic-table-name>.key-generator-class-name= #自增列值生成器类名称，缺省表示使用默认自增列值生成器。该类需提供无参数的构造器
-
-sharding.jdbc.config.sharding.tables.<logic-table-name>.logic-index= #逻辑索引名称，对于分表的Oracle/PostgreSQL数据库中DROP INDEX XXX语句，需要通过配置逻辑索引名称定位所执行SQL的真实分表
-
-sharding.jdbc.config.sharding.binding-tables[0]= #绑定表规则列表
-sharding.jdbc.config.sharding.binding-tables[1]= #绑定表规则列表
-sharding.jdbc.config.sharding.binding-tables[x]= #绑定表规则列表
-
-sharding.jdbc.config.sharding.broadcast-tables[0]= #广播表规则列表
-sharding.jdbc.config.sharding.broadcast-tables[1]= #广播表规则列表
-sharding.jdbc.config.sharding.broadcast-tables[x]= #广播表规则列表
-
-sharding.jdbc.config.sharding.default-data-source-name= #未配置分片规则的表将通过默认数据源定位
-sharding.jdbc.config.sharding.default-database-strategy.xxx= #默认数据库分片策略，同分库策略
-sharding.jdbc.config.sharding.default-table-strategy.xxx= #默认表分片策略，同分表策略
-sharding.jdbc.config.sharding.default-key-generator-class-name= #默认自增列值生成器类名称，缺省使用io.shardingsphere.core.keygen.DefaultKeyGenerator。该类需实现KeyGenerator接口并提供无参数的构造器
-
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.master-data-source-name= #详见读写分离部分
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.slave-data-source-names[0]= #详见读写分离部分
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.slave-data-source-names[1]= #详见读写分离部分
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.slave-data-source-names[x]= #详见读写分离部分
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.load-balance-algorithm-class-name= #详见读写分离部分
-sharding.jdbc.config.sharding.master-slave-rules.<master-slave-data-source-name>.load-balance-algorithm-type= #详见读写分离部分
-sharding.jdbc.config.config.map.key1= #详见读写分离部分
-sharding.jdbc.config.config.map.key2= #详见读写分离部分
-sharding.jdbc.config.config.map.keyx= #详见读写分离部分
-
-sharding.jdbc.config.props.sql.show= #是否开启SQL显示，默认值: false
-sharding.jdbc.config.props.executor.size= #工作线程数量，默认值: CPU核数
-
-sharding.jdbc.config.config.map.key1= #用户自定义配置
-sharding.jdbc.config.config.map.key2= #用户自定义配置
-sharding.jdbc.config.config.map.keyx= #用户自定义配置
 ```
+
+> ShardingSphere读写分离并不会提供主从数据源同步功能，需要sql服务本身实现。
+
+配置示例
+
+```
+rules:
+- !READWRITE_SPLITTING
+  dataSources:
+    readwrite_ds:
+      writeDataSourceName: write_ds
+      readDataSourceNames:
+        - read_ds_0
+        - read_ds_1
+      transactionalReadQueryStrategy: PRIMARY
+      loadBalancerName: random
+  loadBalancers:
+    random:
+      type: RANDOM
+
+```
+
+### 数据加密
+
+规则配置说明
+
+```yaml
+
+rules:
+  - !ENCRYPT
+    tables:
+      <table_name> (+): # 加密表名称
+        columns:
+          <column_name> (+): # 加密列名称
+            cipher:
+              name: # 密文列名称
+              encryptorName: # 密文列加密算法名称
+            assistedQuery (?):
+              name: # 查询辅助列名称
+              encryptorName:  # 查询辅助列加密算法名称
+            likeQuery (?):
+              name: # 模糊查询列名称
+              encryptorName:  # 模糊查询列加密算法名称
+
+    # 加密算法配置
+    encryptors:
+      <encrypt_algorithm_name> (+): # 加解密算法名称
+        type: # 加解密算法类型
+        props: # 加解密算法属性配置
+        # ...
+
+
+```
+
+> 密文列: 加密后的数据列。
+> 
+> 查询辅助列：用于查询的辅助列。 对于一些安全级别更高的非幂等加密算法，提供不可逆的幂等列用于查询。
+> 
+> 模糊查询列：用于模糊查询的列。
+
+
+table初始化脚本
+
+```sql
+CREATE TABLE t_encrypt(
+id INT PRIMARY KEY,
+user_name VARCHAR(255),
+pwd VARCHAR(255)
+);
+```
+
+配置示例
+
+```
+dataSources:
+  unique_ds:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/demo_ds?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password:
+
+rules:
+- !ENCRYPT
+  tables:
+    t_encrypt:
+      columns:
+        user_name:
+          cipher:
+            name: user_name
+            encryptorName: aes_encryptor
+          assistedQuery:
+            name: assisted_query_username
+            encryptorName: assisted_encryptor
+          likeQuery:
+            name: like_query_username
+            encryptorName: like_encryptor
+        pwd:
+          cipher:
+            name: pwd
+            encryptorName: aes_encryptor
+          assistedQuery:
+            name: assisted_query_pwd
+            encryptorName: assisted_encryptor
+  encryptors:
+    aes_encryptor:
+      type: AES
+      props:
+        aes-key-value: 123456abc
+    assisted_encryptor:
+      type: MD5
+    like_encryptor:
+      type: CHAR_DIGEST_LIKE
+
+```
+
+### 数据脱敏
+
+规则配置说明
+
+```yaml
+
+rules:
+- !MASK
+  tables:
+    <table_name> (+): # 脱敏表名称
+      columns:
+        <column_name> (+): # 脱敏列名称
+          maskAlgorithm: # 脱敏算法
+
+  # 脱敏算法配置
+  maskAlgorithms:
+    <mask_algorithm_name> (+): # 脱敏算法名称
+      type: # 脱敏算法类型
+      props: # 脱敏算法属性配置
+      # ...
+
+```
+
+table初始化脚本
+
+```sql
+CREATE TABLE t_mask(
+id INT PRIMARY KEY,
+password VARCHAR(255),
+email VARCHAR(255),
+telephone VARCHAR(255)
+);
+```
+
+配置示例
+```
+dataSources:
+  unique_ds:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/demo_ds?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password:
+
+rules:
+- !MASK
+  tables:
+    t_mask:
+      columns:
+        password:
+          maskAlgorithm: md5_mask
+        email:
+          maskAlgorithm: mask_before_special_chars_mask
+        telephone:
+          maskAlgorithm: keep_first_n_last_m_mask
+
+  maskAlgorithms:
+    md5_mask:
+      type: MD5
+    mask_before_special_chars_mask:
+      type: MASK_BEFORE_SPECIAL_CHARS
+      props:
+        special-chars: '@'
+        replace-char: '*'
+    keep_first_n_last_m_mask:
+      type: KEEP_FIRST_N_LAST_M
+      props:
+        first-n: 3
+        last-m: 4
+        replace-char: '*'
+
+```
+
+
+
+
+### 影子库
+
+规则配置说明
+```yaml
+
+rules:
+  - !SHADOW
+    dataSources:
+      shadowDataSource:
+        productionDataSourceName: # 生产数据源名称
+        shadowDataSourceName: # 影子数据源名称
+    tables:
+      <table_name>:
+        dataSourceNames: # 影子表关联影子数据源名称列表
+          - <shadow_data_source>
+        shadowAlgorithmNames: # 影子表关联影子算法名称列表
+          - <shadow_algorithm_name>
+    defaultShadowAlgorithmName: # 默认影子算法名称（选配项）
+    shadowAlgorithms:
+      <shadow_algorithm_name> (+): # 影子算法名称
+        type: # 影子算法类型
+        props: # 影子算法属性配置
+
+
+```
+
+
+
