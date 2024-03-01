@@ -258,6 +258,11 @@ rules:
 > 广播表：指所有的数据源中都存在的表，表结构及其数据在每个数据库中均完全一致。 适用于数据量不大且需要与海量数据的表进行关联查询的场景，例如：字典表。
 > 单表 //todo
 
+配置示例
+
+>拦截全路由的 SQL 语句。该算法通过判断分片条件是否为空来拦截，当然如果广播表或者非分片表则不应该拦截。
+> 参考https://blog.csdn.net/weixin_39643007/article/details/125886425
+
 ### 读写分离
 
 
@@ -337,7 +342,9 @@ rules:
 > 
 > 查询辅助列：用于查询的辅助列。 对于一些安全级别更高的非幂等加密算法，提供不可逆的幂等列用于查询。
 > 
-> 模糊查询列：用于模糊查询的列。
+> 模糊查询列：用于模糊查询的列。自ShardingSphere5.3.0开始内置单向函数CHAR_DIGEST_LIKE用于模糊查询，
+> 但是于最新的5.4.1版本却没有org.apache.shardingsphere.encrypt.algorithm.like.CharDigestLikeEncryptAlgorithm对应包，造成直接使用官方文档配置模糊查询列报错CHAR_DIGEST_LIKE算法找不到
+> 所以建议如果有模糊查询列需求可以使用旧版本或者使用自定义的算法
 
 
 table初始化脚本
@@ -352,7 +359,7 @@ pwd VARCHAR(255)
 
 配置示例
 
-```
+```yaml
 dataSources:
   unique_ds:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
@@ -373,16 +380,11 @@ rules:
           assistedQuery:
             name: assisted_query_username
             encryptorName: assisted_encryptor
-          likeQuery:
-            name: like_query_username
-            encryptorName: like_encryptor
+            
         pwd:
           cipher:
             name: pwd
             encryptorName: aes_encryptor
-          assistedQuery:
-            name: assisted_query_pwd
-            encryptorName: assisted_encryptor
   encryptors:
     aes_encryptor:
       type: AES
@@ -390,8 +392,6 @@ rules:
         aes-key-value: 123456abc
     assisted_encryptor:
       type: MD5
-    like_encryptor:
-      type: CHAR_DIGEST_LIKE
 
 ```
 
@@ -468,7 +468,7 @@ rules:
 
 ```
 
-
+> 数据脱敏指的是对查询结果的字符替换，数据的储存还是使用明文储存。
 
 
 ### 影子库
