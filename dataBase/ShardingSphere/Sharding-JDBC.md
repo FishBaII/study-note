@@ -178,7 +178,23 @@ _shardingsphere-JDBC V5.4.1_, 这是当前最新版本，仅支持yaml配置(与
 > 
 > 需要注意的是，因为在SpringBoot3.2.x中，默认使用snakeyaml2.2（详情可参考上面issue讨论），因而此版本仍不支持SpringBoot3.2.x以上，建议等待shardingsphere-jdbc更新或者降低SpringBoot版本为3.0.x
 
+**shardingsphere配置引入**
 
+```yaml
+spring:
+  datasource:
+    driverClassName: org.apache.shardingsphere.driver.ShardingSphereDriver
+    #引入自定义的shardingsphere规则yaml，通常位置在resources中
+    url: jdbc:shardingsphere:classpath:xxx.yaml
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+```
 
 
 ### 数据分片
@@ -256,12 +272,230 @@ rules:
 ```
 
 > 广播表：指所有的数据源中都存在的表，表结构及其数据在每个数据库中均完全一致。 适用于数据量不大且需要与海量数据的表进行关联查询的场景，例如：字典表。
-> 单表 //todo
+
+
+建表sql
+```sql
+
+USE demo_ds_0;
+CREATE TABLE `t_order_0` (
+	`id` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	`order_id` INT(10) NOT NULL,
+	`order_number` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+
+CREATE TABLE `t_dict` (
+	`id` INT(10) NOT NULL AUTO_INCREMENT,
+	`dict_name` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=15
+;
+
+
+USE demo_ds_1;
+CREATE TABLE `t_order_1` (
+	`id` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	`order_id` INT(10) NOT NULL,
+	`order_number` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+
+CREATE TABLE `t_dict` (
+	`id` INT(10) NOT NULL AUTO_INCREMENT,
+	`dict_name` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=15
+;
+
+```
+
+映射类
+```java
+
+@Entity
+@Table(name = "t_order")
+public class Order implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private String id;
+
+
+    @Column
+    private Long orderId;
+
+    @Column
+    private String orderNumber;
+    
+    
+    //getter and setter
+
+}
+```
 
 配置示例
+```yaml
+dataSources:
+  ds_0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3301/demo_ds_0?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: 12345
+  ds_1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3301/demo_ds_1?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: 12345
 
->拦截全路由的 SQL 语句。该算法通过判断分片条件是否为空来拦截，当然如果广播表或者非分片表则不应该拦截。
-> 参考https://blog.csdn.net/weixin_39643007/article/details/125886425
+rules:
+  - !SHARDING
+    tables:
+      t_order:
+        #数据节点分布情况
+        actualDataNodes: ds_0.t_order_0,ds_1.t_order_1
+        tableStrategy:
+          standard:
+            #分片键为order_id
+            shardingColumn: order_id
+            #分片规则
+            shardingAlgorithmName: t_order_inline
+        #分布式id
+        keyGenerateStrategy:
+          column: id
+          keyGeneratorName: snowflake
+          # 声明分片审计算法,如果使用如下规则，则查询条件必须带有分片键，否则提示DML错误
+#        auditStrategy:
+#          auditorNames:
+#            - sharding_key_required_auditor
+#          allowHintDisable: true
+      t_order_item:
+        actualDataNodes: ds_${0..1}.t_order_item_${0..1}
+        tableStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: t_order_item_inline
+        keyGenerateStrategy:
+          column: order_item_id
+          keyGeneratorName: snowflake
+      t_account:
+        actualDataNodes: ds_${0..1}.t_account_${0..1}
+        tableStrategy:
+          standard:
+            shardingAlgorithmName: t_account_inline
+        keyGenerateStrategy:
+          column: account_id
+          keyGeneratorName: snowflake
+    defaultShardingColumn: account_id
+    # 分片表绑定，用于关联查询
+#    bindingTables:
+#      - t_order,t_order_item
+    defaultDatabaseStrategy:
+      standard:
+        shardingColumn: order_id
+        shardingAlgorithmName: database_inline
+    defaultTableStrategy:
+      none:
+
+    #设置具体分片规则，这里是以order_id奇偶性分片，还可以使用外部数据进行分片（如登录者id）
+    shardingAlgorithms:
+      database_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${order_id % 2}
+      t_order_inline:
+        type: INLINE
+        props:
+          algorithm-expression: t_order_${order_id % 2}
+      t_order_item_inline:
+        type: INLINE
+        props:
+          algorithm-expression: t_order_item_${order_id % 2}
+      t_account_inline:
+        type: INLINE
+        props:
+          algorithm-expression: t_account_${account_id % 2}
+    keyGenerators:
+      snowflake:
+        type: SNOWFLAKE
+    auditors:
+      sharding_key_required_auditor:
+        type: DML_SHARDING_CONDITIONS
+  #广播表
+  - !BROADCAST
+    tables:
+      - t_dict
+  
+  #单表
+#  - !SINGLE
+#    tables:
+#      # MySQL style
+#      - ds_0.* # Load specified single table
+#      - "*.*" # Load all single tables
+#    defaultDataSource: ds_0 # The default data source is used when executing CREATE TABLE statement to create a single table. The default value is null, indicating random unicast routing.  
+#展示逻辑 SQL，真实 SQL 和 SQL 解析结果。学习或者开发过程建议开启
+props:
+  sql-show: true
+
+```
+
+
+> 单表：指所有的分片数据源中仅唯一存在的表。 适用于数据量不大且无需分片的表。
+>
+> 注意：符合以下条件的单表会被自动加载：
+>
+> * 数据加密、数据脱敏等规则中显示配置的单表
+> * 用户通过 ShardingSphere 执行 DDL 语句创建的单表
+
+效果示例
+
+```java
+    @Test
+    void insertWithSharding(){
+
+        //往分片表插入数据，会根据自定义规则插入不同的数据库
+        Order order1 = new Order();
+        order1.setOrderId(1L);
+        order1.setOrderNumber("P98");
+        orderRepository.save(order1);
+
+        Order order2 = new Order();
+        order2.setOrderId(2L);
+        order2.setOrderNumber("P14");
+        orderRepository.save(order2);
+
+        //全路由查询所有数据（不建议全路由，会影响性能，建议开发使用分片键进行筛选）
+        //关联查询可参考官方文档https://shardingsphere.apache.org/document/current/cn/features/sharding/limitation/
+        assertEquals(2, orderRepository.count());
+
+        //对广播表进行插入，会对所有数据源的相同表同时插入
+        Dict dict = new Dict();
+        dict.setDictName("DICT");
+        dictRepository.save(dict);
+        assertEquals(1, dictRepository.count());
+
+        //对没有声明的single单表进行操作，会抛出异常找不到此表，需要先配置single规则
+        assertThrows(TableNotExistsException.class, () -> maskRepository.count());
+
+    }
+```
+
+![](./img/Sharding-JDBC-vertical-exp1.png)
+![](./img/Sharding-JDBC-vertical-exp2.png)
 
 ### 读写分离
 
@@ -287,23 +521,80 @@ rules:
 
 > ShardingSphere读写分离并不会提供主从数据源同步功能，需要sql服务本身实现。
 
+
+table初始化脚本
+
+```sql
+CREATE TABLE `t_dict` (
+	`id` INT(10) NOT NULL AUTO_INCREMENT,
+	`dict_name` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=9
+;
+```
+
 配置示例
 
-```
-rules:
-- !READWRITE_SPLITTING
-  dataSources:
-    readwrite_ds:
-      writeDataSourceName: write_ds
-      readDataSourceNames:
-        - read_ds_0
-        - read_ds_1
-      transactionalReadQueryStrategy: PRIMARY
-      loadBalancerName: random
-  loadBalancers:
-    random:
-      type: RANDOM
+```yaml
+dataSources:
+  ds_0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3301/demo_ds_0?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: 12345
+  ds_1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3301/demo_ds_1?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: 12345
 
+
+rules:
+  - !READWRITE_SPLITTING
+    dataSources:
+      ds_0:
+        writeDataSourceName: ds_0
+        readDataSourceNames:
+          - ds_1
+        loadBalancerName: round_robin
+    loadBalancers:
+      round_robin:
+        type: ROUND_ROBIN
+        
+  - !SINGLE
+    tables:
+      # MySQL style
+      - ds_0.* # Load specified single table
+      - "*.*" # Load all single tables
+    defaultDataSource: ds_0 # The default data source is used when executing CREATE TABLE statement to create a single table. The default value is null, indicating random unicast routing.
+
+```
+
+> 在此版本读写分离配置，必须配置单表（single）规则，载入对应的表，否则会提示对应的表找不到，暂不清楚是不是版本bug还是特性，可参考此issue讨论
+> https://github.com/apache/shardingsphere/issues/28848
+
+效果实例
+
+```java
+    @Test
+    void insertWithReadAndWrite(){
+
+        //add data into write db
+        Dict dict = new Dict();
+        dict.setId(1L);
+        dict.setDictName("DICT_WRITE");
+        dictRepository.save(dict);
+
+        //get data from read db
+        //data has inserted in before
+        assertEquals("DICT_READ", dictRepository.findById(1L).get().getDictName());
+
+    }
 ```
 
 ### 数据加密
@@ -341,6 +632,8 @@ rules:
 > 密文列: 加密后的数据列。
 > 
 > 查询辅助列：用于查询的辅助列。 对于一些安全级别更高的非幂等加密算法，提供不可逆的幂等列用于查询。
+> 即使是相同的数据，如两个用户的密码相同，它们在数据库里存储的加密数据也应当是不一样的。这种理念更有利于保护用户信息，防止撞库成功。
+> 需要实现QueryAssistedEncryptor接口才可以使用到查询辅助列，详情可参考官方文档
 > 
 > 模糊查询列：用于模糊查询的列。自ShardingSphere5.3.0开始内置单向函数CHAR_DIGEST_LIKE用于模糊查询，
 > 但是于最新的5.4.1版本却没有org.apache.shardingsphere.encrypt.algorithm.like.CharDigestLikeEncryptAlgorithm对应包，造成直接使用官方文档配置模糊查询列报错CHAR_DIGEST_LIKE算法找不到
@@ -350,11 +643,17 @@ rules:
 table初始化脚本
 
 ```sql
-CREATE TABLE t_encrypt(
-id INT PRIMARY KEY,
-user_name VARCHAR(255),
-pwd VARCHAR(255)
-);
+CREATE TABLE `t_encrypt` (
+	`id` INT(10) NOT NULL AUTO_INCREMENT,
+	`user_name` VARCHAR(50) NULL DEFAULT '' COLLATE 'utf8mb4_0900_ai_ci',
+	`pwd` VARCHAR(50) NULL DEFAULT '' COLLATE 'utf8mb4_0900_ai_ci',
+	`assisted_query_username` VARCHAR(200) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_0900_ai_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=7
+;
 ```
 
 配置示例
@@ -378,6 +677,7 @@ rules:
             name: user_name
             encryptorName: aes_encryptor
           assistedQuery:
+            #assisted_query_username是查询辅助列，存在于表中，但实体映射类不需要进行映射，只是供ShardingSphere使用
             name: assisted_query_username
             encryptorName: assisted_encryptor
             
@@ -393,7 +693,31 @@ rules:
     assisted_encryptor:
       type: MD5
 
+#展示逻辑 SQL，真实 SQL 和 SQL 解析结果。学习或者开发过程建议开启
+props:
+  sql-show: true
 ```
+
+效果实例
+
+```java
+    @Test
+    void insertWithEncrypt(){
+    
+        Encrypt encrypt = new Encrypt();
+        encrypt.setPwd("pwd");
+        encrypt.setUserName("tom");
+        encryptRepository.save(encrypt);
+        //Logic SQL: insert into t_encrypt (pwd, user_name) values (?, ?)
+        //Actual SQL: ds_0 ::: insert into t_encrypt (pwd, user_name, assisted_query_username) values (?, ?, ?) ::: [iGyEVgoSKqV4Vy02gTn5cg==, qCCmvf7OWRxbVbtLb0az1g==, 34b7da764b21d298ef307d04d8152dc5]
+    
+        Encrypt encryptFromName = new Encrypt();
+        encryptFromName.setUserName("tom");
+        Example<Encrypt> exampleFromName = Example.of(encryptFromName);
+        assertEquals("tom", encryptRepository.findOne(exampleFromName).get().getUserName());
+    }
+```
+
 
 ### 数据脱敏
 
@@ -430,7 +754,7 @@ telephone VARCHAR(255)
 ```
 
 配置示例
-```
+```yaml
 dataSources:
   unique_ds:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
@@ -465,11 +789,33 @@ rules:
         first-n: 3
         last-m: 4
         replace-char: '*'
-
+#展示逻辑 SQL，真实 SQL 和 SQL 解析结果。学习或者开发过程建议开启
+props:
+  sql-show: true
 ```
 
 > 数据脱敏指的是对查询结果的字符替换，数据的储存还是使用明文储存。
 
+
+效果实例
+
+```java
+    @Test
+    void insertWithMask(){
+        Mask mask = new Mask();
+        mask.setId(1L);
+        mask.setEmail("something@test.com");
+        mask.setPassword("maskdata");
+        mask.setTelephone("13488888888");
+        maskRepository.save(mask);
+    
+        //查询结果会根据配置进行脱敏处理（数据库储存仍是原文，脱敏与加密处理不一样）
+        Mask maskFromDB = maskRepository.findById("1").get();
+        assertEquals("*********@test.com", maskFromDB.getEmail());
+        assertEquals("b6fb4484ce8b6f56833493b30056bf41", maskFromDB.getPassword());
+        assertEquals("134****8888", maskFromDB.getTelephone());
+    }
+```
 
 ### 影子库
 
