@@ -347,5 +347,17 @@ public class BeanConfigTest {
 * @ContextConfiguration(classes=xxx) 来指定加载那个 Spring @Configuration。
 
 
+### reflect反射
+
+```java
+
+import org.springframework.util.ReflectionUtils
+        
+ReflectionTestUtils.setField(testService, fieldName, fieldValue);
+ReflectionTestUtils.invokeMethod(testService, "privateMethodName", "args");
+
+```
+
+
 ### 参考引用
 [https://juejin.cn/post/6844904039549779981](https://juejin.cn/post/6844904039549779981)
