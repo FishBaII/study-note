@@ -183,3 +183,17 @@ getName.name: Do not pass duplicate parameters
 
 >- 示例的异常捕获返回仅作测试，实际项目中的异常处理请使用自定义的response dto返回此异常
 
+
+
+## 启用lib的bean
+
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Import({MyBean.class})
+public @interface EnableLibBean {
+}
+```
+
+>- 引入此lib后使用@EnableLibBean来启用Mybean
