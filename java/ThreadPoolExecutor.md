@@ -47,10 +47,29 @@
 
 ### 其他常用api
 
-* execute()方法用于提交不需要返回值的任务，所以无法判断任务是否被线程池执行成功与否；
+* execute()方法用于提交不需要返回值和不关心任务状态的任务，所以无法判断任务是否被线程池执行成功与否；
 * submit()方法用于提交需要返回值的任务。线程池会返回一个 Future 类型的对象，通过这个 Future 对象可以判断任务是否执行成功 ，
-并且可以通过 Future 的 get()方法来获取返回值，get()方法会阻塞当前线程直到任务完成，
-而使用 get（long timeout，TimeUnit unit）方法则会阻塞当前线程一段时间后立即返回，这时候有可能任务没有执行完。
+1. 任务状态监控（isDone()）
+2. 任务取消(cancel())
+3. 阻塞等待任务完成即使没有返回(get())
+4. 异常处理
+```java
+Future<?> future = executor.submit(() -> {
+    throw new RuntimeException("任务异常");
+});
+
+try {
+    future.get();  // 这里会抛出ExecutionException包装的原始异常
+} catch (ExecutionException e) {
+    Throwable cause = e.getCause();  // 获取原始异常
+}
+```
+5. 特殊返回值处理
+```java
+Future<String> future = executor.submit(runnableTask, "预设结果");
+String result = future.get();  // 获取"预设结果"
+```
+
 * shutdown（） :关闭线程池，线程池的状态变为 SHUTDOWN。线程池不再接受新任务了，但是队列里的任务得执行完毕。
 * shutdownNow（） :关闭线程池，线程的状态变为 STOP。线程池会终止当前正在运行的任务，并停止处理排队的任务并返回正在等待执行的 List。
 * isShutDown 当调用 shutdown() 方法后返回为 true。
@@ -239,4 +258,5 @@ public class Main {
 一旦任务暂停，CPU 就会处于空闲状态，而在这种情况下多出来的一个线程就可以充分利用 CPU 的空闲时间。
 * I/O 密集型任务(2N)： 这种任务应用起来，系统会用大部分的时间来处理 I/O 交互，而线程在处理 I/O 的时间段内不会占用 CPU 来处理，
 这时就可以将 CPU 交出给其它线程使用。因此在 I/O 密集型任务的应用中，我们可以多配置一些线程，具体的计算方法是 2N。
+
 
