@@ -1,7 +1,7 @@
-# Day 2：Java 并发编程深度复习
+# Day 2：Java 并发编程深度复习（含 JDK 21 虚拟线程）
 
-> 计划日期：Week 1 Day 2 | 主题：线程池、synchronized、Lock、volatile、CAS
-> 输出要求：能画出线程池工作流程
+> 计划日期：Week 1 Day 2 | 主题：线程池、synchronized、Lock、volatile、CAS、虚拟线程
+> 输出要求：能画出线程池工作流程、能对比平台线程与虚拟线程
 
 ---
 
@@ -236,6 +236,159 @@ CAS(V, E, N)
 
 ---
 
+### 1.6 虚拟线程（Virtual Threads，JDK 21+）
+
+> JEP 444：虚拟线程是 JDK 21 正式发布的**轻量级线程**，由 JVM 而非操作系统管理，旨在以"每任务一线程"模型解决高并发 I/O 场景下平台线程（OS 线程）稀缺的问题。
+
+#### 平台线程 vs 虚拟线程
+
+```
+平台线程（Platform Thread，传统 java.lang.Thread）
+  JVM 线程 1:1 映射到 OS 内核线程
+  ┌─────────┐    ┌─────────┐    ┌─────────┐
+  │ Thread1 │    │ Thread2 │    │ Thread3 │   ← Java 层
+  └────┬─────┘    └────┬─────┘    └────┬─────┘
+       │               │               │
+  ┌────▼───────────────▼───────────────▼─────┐
+  │         OS 内核线程（昂贵，~1MB 栈）         │
+  └──────────────────────────────────────────┘
+
+虚拟线程（Virtual Thread）
+  多个虚拟线程 M:N 映射到少量平台线程（载体线程）
+  ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐
+  │V1 │ │V2 │ │V3 │ │V4 │ │V5 │ │V6 │ ... (可创建上百万个)
+  └──┬─┘ └──┬─┘ └──┬─┘ └──┬─┘ └──┬─┘ └──┬─┘
+     └──────┴──────┴──────┴──────┴──────┘
+                       │
+              ┌────────▼────────┐
+              │  少量平台线程     │
+              │  (通常 = CPU 核数) │
+              └─────────────────┘
+```
+
+| 维度 | 平台线程 | 虚拟线程 |
+|------|---------|---------|
+| **管理者** | 操作系统内核 | JVM（`ForkJoinPool` 作为调度器） |
+| **栈内存** | ~1MB（固定，不可动态调整） | 按需分配，存储在堆上（初始 ~几百字节） |
+| **创建数量** | 数千个（受 OS 限制） | **数百万个**（几乎无限制） |
+| **上下文切换** | 内核态切换，开销大 | JVM 内部"挂载/卸载"，仅改内存指针，几乎无开销 |
+| **I/O 阻塞** | 阻塞 OS 线程，不可释放 | **JVM 自动"卸载"**虚拟线程，释放平台线程去执行其他任务 |
+| **适用场景** | CPU 密集型任务 | **I/O 密集型**高并发任务（如 HTTP 请求、DB 查询、RPC 调用） |
+| **是否需要池化** | 是（线程池复用） | **不需要！**用完即创建，资源消耗极低 |
+
+#### 核心原理
+
+```
+虚拟线程 I/O 阻塞时的"卸载-挂载"过程：
+
+  Carrier Thread（平台线程）
+      │
+      ├── mount(V1) → V1 开始执行
+      │       │
+      │       │ V1 遇到 I/O 阻塞（如 socket read / DB 查询）
+      │       │
+      │       ▼
+      │   JVM 自动 unmount(V1)  ← 将 V1 的栈帧从平台线程拷贝到堆对象
+      │       │
+      │   mount(V2) → 同一平台线程立即执行 V2  ← 无 OS 上下文切换！
+      │       │
+      │       │ V2 的 I/O 完成后
+      │       │
+      │       ▼
+      │   unmount(V2) → mount(V1继续) → V1 从断点继续执行
+
+整个过程在 JVM 内部完成，仅涉及内存指针的变更：
+  ① V1 栈帧数据从平台线程栈复制到堆上的 V1 对象
+  ② 平台线程立即去执行另一个已就绪的虚拟线程
+  ③ 无需内核态切换，CPU 缓存保持"热"状态
+```
+
+> **一句话总结**：虚拟线程让 I/O 阻塞不再是"线程杀手"——当一个虚拟线程因为 I/O 被"停放"（park）时，它只是把栈帧暂存到堆上，所占用的平台线程立刻被释放去执行其他虚拟线程。**总耗时只取决于最长的单次 I/O 时间，而不是所有 I/O 时间的总和。**
+
+#### 创建与使用
+
+```java
+// 方式 1：Thread API（JDK 21+）
+Thread vThread = Thread.ofVirtual()
+    .name("my-virtual-thread")
+    .start(() -> {
+        System.out.println("Running in virtual thread: " + Thread.currentThread());
+        // 判断是否为虚拟线程
+        System.out.println("Is virtual: " + Thread.currentThread().isVirtual());
+    });
+
+// 方式 2：ExecutorService（推荐）
+try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    // 提交 10,000 个任务，每个任务对应一个新虚拟线程
+    for (int i = 0; i < 10_000; i++) {
+        final int taskId = i;
+        executor.submit(() -> {
+            // 模拟 I/O 操作（如 HTTP 调用、DB 查询）
+            Thread.sleep(Duration.ofMillis(100));
+            System.out.println("Task " + taskId + " done on " + Thread.currentThread());
+        });
+    }
+} // try-with-resources 自动 close()，等待所有任务完成
+
+// 方式 3：Thread.Builder（流式 API）
+Thread vt = Thread.ofVirtual()
+    .name("custom-vt")
+    .unstarted(() -> { /* task */ });
+vt.start();
+```
+
+#### 实测对比：虚拟线程 vs 传统线程池
+
+```
+场景：处理 1,000 个并发 HTTP 请求，每个请求 I/O 等待 100ms
+
+传统线程池（假设 100 个平台线程）：
+  100 线程同时执行 → 每批 100 任务需 100ms
+  共需 10 批 → 总耗时 ≈ 1,000ms（1 秒）
+
+虚拟线程：
+  1,000 个虚拟线程并发 → 全部同时发起 I/O
+  所有虚拟线程同时被"卸载"等待 → 平台线程全部空闲
+  100ms 后 I/O 全部完成 → 所有虚拟线程恢复执行
+  总耗时 ≈ 100ms（10x 提升！）
+```
+
+#### ⚠️ 虚拟线程注意事项（Pin 问题）
+
+```java
+// ❌ 危险：在虚拟线程中使用 synchronized 会导致 "pin"（固定）
+// 虚拟线程被 pin 后，载体线程无法被释放，退化为平台线程行为
+synchronized (lock) {
+    Thread.sleep(1000);  // 虚拟线程被 pin，平台线程也被阻塞！
+    // 其他虚拟线程无法使用此平台线程
+}
+
+// ✅ 替代方案：使用 ReentrantLock（配合 tryLock 或条件变量）
+Lock lock = new ReentrantLock();
+lock.lock();
+try {
+    Thread.sleep(1000);  // 虚拟线程正常卸载，平台线程可被释放
+} finally {
+    lock.unlock();
+}
+
+// ✅ JDK 24+：synchronized 已支持虚拟线程正常卸载！
+```
+
+#### 适用/不适用场景
+
+| 适用 ✅ | 不适用 ❌ |
+|---------|----------|
+| HTTP 请求处理（如 Spring Boot Web） | 纯 CPU 计算（如加密、编解码、AI 推理） |
+| 大量并发 DB 查询 / RPC 调用 | 需要使用 `synchronized` 的旧代码（JDK < 24） |
+| 消息队列消费者 | 需要线程池固定资源控制的场景 |
+| 调用外部 API（高延迟 I/O） | 需要 ThreadLocal 做线程级缓存的场景（虚拟线程用完即弃，ThreadLocal 会膨胀） |
+| "每任务一线程"风格的代码简化 | |
+
+> **Spring Boot 3.2+ 已内置对虚拟线程的支持**：配置 `spring.threads.virtual.enabled=true` 即可让 Tomcat/Jetty 的请求处理线程使用虚拟线程。
+
+---
+
 ## 二、面试高频题（带答案）
 
 ### Q1：线程池的 7 个参数分别是什么？工作流程是怎样的？
@@ -318,6 +471,34 @@ try {
 } finally {
     tl.remove();  // 必须！
 }
+```
+
+---
+
+### Q7：虚拟线程（Virtual Threads）是什么？与传统平台线程有什么根本区别？
+
+**虚拟线程**是 JDK 21 正式发布的轻量级线程，由 JVM 管理而非操作系统，M:N 映射到少量平台线程（载体线程）。
+
+**根本区别**：
+
+| 维度 | 平台线程 | 虚拟线程 |
+|------|---------|---------|
+| **栈内存** | ~1MB（OS 分配） | 按需分配在堆上（初始 ~几百字节） |
+| **创建数量** | 数千个 | **数百万个** |
+| **I/O 阻塞时** | 线程被 OS 挂起，不可释放 | JVM 自动"卸载"虚拟线程，**释放平台线程**去执行其他任务 |
+| **是否需要池化** | 是 | **不需要** |
+
+**核心价值**：对于 I/O 密集型高并发场景，虚拟线程让"每任务一线程"模型成为可能，总耗时只取决于最长的单次 I/O 时间。
+
+**注意（Pin 问题）**：虚拟线程内使用 `synchronized` 会导致载体线程被 pin（无法释放），应优先使用 `ReentrantLock`（JDK 24+ 已修复此问题）。
+
+```java
+// 推荐：每个任务一个虚拟线程
+try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    for (int i = 0; i < 10_000; i++) {
+        executor.submit(() -> fetchFromAPI());  // I/O 阻塞时自动卸载
+    }
+} // 自动等待全部完成
 ```
 
 ---
@@ -471,6 +652,69 @@ class BoundedBuffer<T> {
 }
 ```
 
+### 4.4 虚拟线程并发 HTTP 请求示例
+
+```java
+// 场景：并发调用 100 个外部 API，每个 API 响应时间 ~500ms
+
+// ------------------- JDK 21 虚拟线程版本（简单直观，~500ms 完成） -------------------
+try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    List<Future<String>> futures = new ArrayList<>();
+    
+    for (int i = 0; i < 100; i++) {
+        final int id = i;
+        Future<String> future = executor.submit(() -> {
+            // 模拟 HTTP 调用（I/O 阻塞），虚拟线程自动卸载，平台线程可复用
+            Thread.sleep(Duration.ofMillis(500));
+            return "API response for " + id;
+        });
+        futures.add(future);
+    }
+    
+    // 收集所有结果
+    for (Future<String> f : futures) {
+        System.out.println(f.get());  // 阻塞等待每个结果
+    }
+} // executor.close() 自动等待所有虚拟线程完成
+// 总耗时 ≈ 500ms + 收集开销（而非 100 × 500ms = 50s）
+
+// ------------------- 传统平台线程池版本（复杂，需要调优线程数） -------------------
+ExecutorService pool = Executors.newFixedThreadPool(100);  // 最多 100 线程，资源昂贵
+try {
+    List<Future<String>> futures = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+        final int id = i;
+        futures.add(pool.submit(() -> {
+            Thread.sleep(Duration.ofMillis(500));
+            return "API response for " + id;
+        }));
+    }
+    for (Future<String> f : futures) {
+        System.out.println(f.get());
+    }
+} finally {
+    pool.shutdown();
+}
+// 总耗时 ≈ 500ms，但创建了 100 个重型 OS 线程（共 ~100MB 栈内存）
+```
+
+```java
+// 虚拟线程最佳实践：在 Spring Boot 3.2+ 中一键启用
+// application.properties:
+// spring.threads.virtual.enabled=true
+//
+// 然后 Controller 的每个请求自动运行在虚拟线程上
+@RestController
+public class OrderController {
+    
+    @GetMapping("/orders/{id}")
+    public Order getOrder(@PathVariable Long id) {
+        // 此方法运行在虚拟线程上，DB 查询阻塞时自动卸载
+        return orderService.findById(id);  // 包含 JPA / MyBatis I/O 调用
+    }
+}
+```
+
 ---
 
 ## 五、实战练习
@@ -563,6 +807,55 @@ synchronized (lock2) {
 - 代码层面：按固定顺序获取锁避免死锁
 </details>
 
+### 练习 4：虚拟线程场景分析
+
+```java
+// 场景：有 5,000 个并发任务，每个任务需要查询数据库 200ms（I/O 阻塞）
+
+// 方案 A：传统线程池
+ExecutorService pool = Executors.newFixedThreadPool(200);
+for (int i = 0; i < 5000; i++) {
+    pool.submit(() -> {
+        db.query();  // 阻塞 200ms
+    });
+}
+
+// 方案 B：虚拟线程
+try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    for (int i = 0; i < 5000; i++) {
+        executor.submit(() -> {
+            db.query();  // 阻塞 200ms
+        });
+    }
+}
+
+// 问题：
+// 1. 方案 A 总耗时大约多少？
+// 2. 方案 B 总耗时大约多少？
+// 3. 方案 B 中如果 db.query() 内部使用了 synchronized，会有什么问题？
+```
+
+<details>
+<summary>答案</summary>
+
+**1. 方案 A**：
+- 200 个平台线程同时执行，每批 200 个任务
+- 5,000 ÷ 200 = 25 批
+- 总耗时 ≈ 25 × 200ms = **5,000ms（5 秒）**
+- 同时占用 200 个 OS 线程（~200MB 栈内存）
+
+**2. 方案 B**：
+- 5,000 个虚拟线程全部同时发起 DB 查询
+- 每个虚拟线程在 DB I/O 阻塞时自动"卸载"，平台线程被释放
+- 200ms 后所有 I/O 几乎同时完成 → 虚拟线程恢复执行
+- 总耗时 ≈ **200ms（25x 提升！）**
+
+**3. synchronized 问题**：
+- 如果 `db.query()` 内部使用了 `synchronized`（JDK < 24），虚拟线程会被 "pin"
+- 载体线程无法释放，退化为平台线程行为，并发能力大幅下降
+- **解决方案**：升级 JDK 24+ 或改用 `ReentrantLock`
+</details>
+
 ---
 
 ## 六、易错点/坑
@@ -576,6 +869,7 @@ synchronized (lock2) {
 | 5 | `synchronized` 锁的对象变了 | 锁 `String` 或包装类的引用被重新赋值后，锁的对象变化，同步失效 |
 | 6 | `ThreadLocal` 用完不 `remove()` | 线程池场景下线程复用，value 一直存在 → 内存泄漏 + 脏数据 |
 | 7 | `Lock` 不放在 `finally` 中释放 | 异常后锁未释放 → 其他线程永远阻塞 |
+| 8 | 虚拟线程中用 `synchronized`（JDK < 24） | 导致虚拟线程被 "pin"，载体线程无法释放 → 并发能力骤降，退化为平台线程行为。用 `ReentrantLock` 替代 |
 
 ---
 
@@ -603,6 +897,12 @@ Java 锁
 │   ├── AtomicInteger / AtomicLong / AtomicReference
 │   └── LongAdder（JDK 8，减少 CAS 竞争）
 │
+├── 虚拟线程（Virtual Threads，JDK 21+）
+│   ├── JVM 管理，非 OS 线程
+│   ├── I/O 阻塞时自动卸载，释放平台线程
+│   ├── 无需池化，可创建百万级
+│   └── ⚠️ synchronized Pin 问题（JDK < 24）
+│
 └── volatile（轻量同步，内存可见性）
     └── 适合状态标记 + DCL
 ```
@@ -623,6 +923,11 @@ Java 锁
 - [ ] 能手写生产者-消费者（`wait`/`notify` 模式）
 - [ ] 能解释 `submit()` vs `execute()` 的区别
 - [ ] 能说出为什么不能用 `Executors` 创建线程池
+- [ ] 能对比平台线程与虚拟线程（栈内存、创建数量、I/O 阻塞行为、是否池化）
+- [ ] 能解释虚拟线程面临 I/O 阻塞时"卸载-挂载"的过程
+- [ ] 能写出 `Executors.newVirtualThreadPerTaskExecutor()` 的基本用法
+- [ ] 能说出虚拟线程的 Pin 问题（`synchronized`）及规避方案（`ReentrantLock` / JDK 24+）
+- [ ] 能说出虚拟线程适用场景（I/O 密集型）和不适用场景（CPU 密集型、需池化）
 
 ---
 
